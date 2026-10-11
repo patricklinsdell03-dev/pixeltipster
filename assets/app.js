@@ -47,7 +47,7 @@ function fixturesPage() {
     + demo('Demo: fixtures and numbers are sample data until the live feed is connected.')
     + `<div class="pills" data-k="fxcomp">${comps.map(c => `<button data-a="fxcomp" data-id="${c}" class="${A.comp === c ? 'on' : ''}" aria-pressed="${A.comp === c}">${c === 'All' ? '' : compDot(c)}${c}</button>`).join('')}</div>`
     + [...new Set(list.map(f => f.date))].map(d => `<section><h2>${fmtDate(d)}</h2><div class="fxgrid">${list.filter(f => f.date === d).map(f =>
-      `<a class="card fx" href="#/match/${f.id}"><span class="fxbar" style="background:linear-gradient(90deg,${kitColor(f.hc)} 50%,${kitColor(f.ac)} 50%)"></span><span class="px">${compDot(f.comp)}${f.comp} · ${f.ko}</span>`
+      `<a class="card fx" href="#/match/${f.id}"><span class="px">${compDot(f.comp)}${f.comp} · ${f.ko}</span>`
       + `<span class="fxteam">${jer(f.hc)}<b>${f.home}</b></span><span class="fxteam">${jer(f.ac)}<b>${f.away}</b></span>`
       + `<span class="sm mu">${f.full ? 'Team, player and trend stats' : 'Team stats now · players at line-ups'}</span><span class="go">Open sheet ${ico('arrow')}</span></a>`).join('')}</div></section>`).join('');
 }
