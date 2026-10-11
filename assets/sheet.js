@@ -53,7 +53,7 @@ const stepper = (id, st, line) => `<span class="step"><button data-a="line" data
 
 function cell(id, st, ti) {
   const c = rate(st, ti, lineOf(id, st, ti));
-  return `<span class="cell ${c.hot ? 'hot' : ''}"><span class="t"><span><span class="mu">${T[ti].code}</span> ${lineShort(st, lineOf(id, st, ti))}</span><b class="mono">${c.n}/${c.N}</b></span>${meter(c.pct)}</span>`;
+  return `<span class="cell ${c.hot ? 'hot' : ''}"><span class="t"><span class="withjer">${jer(T[ti].code, 's')}<span class="mu">${T[ti].code}</span> ${lineShort(st, lineOf(id, st, ti))}</span><b class="mono">${c.n}/${c.N}</b></span>${meter(c.pct)}</span>`;
 }
 
 /* Expanded view of one stat for one team. ctx is set for team stats; players share one line, passed as fixed. */
@@ -95,7 +95,7 @@ function teamRow(gi, si) {
 function marketTab(name) {
   const gi = T[0].groups.findIndex(g => g.name === name), stats = T[0].groups[gi].stats, more = !!S.more[name];
   const hidden = stats.filter(s => !s.core).length;
-  return `<div class="card mcard" style="padding-top:4px">${W.matches ? `<h2 style="padding-top:10px">${name}</h2>` +`<div class="wrow whd px mu"><span>Stat</span>${T.map(t => `<span class="wt"><span>${t.name}</span><span class="r">Avg</span><span class="r">L5</span><span class="r">Hits</span></span>`).join('')}</div>` : ''}${stats.map((st, si) => more || st.core ? teamRow(gi, si) : '').join('')}`
+  return `<div class="card mcard" style="padding-top:4px">${W.matches ? `<h2 style="padding-top:10px">${name}</h2>` +`<div class="wrow whd px mu"><span>Stat</span>${T.map(t => `<span class="wt"><span class="withjer">${jer(t.code, 's')}${t.name}</span><span class="r">Avg</span><span class="r">L5</span><span class="r">Hits</span></span>`).join('')}</div>` : ''}${stats.map((st, si) => more || st.core ? teamRow(gi, si) : '').join('')}`
     + (hidden ? `<button data-a="more" data-id="${name}" style="margin-top:8px;font-weight:600;font-size:14px">${more ? 'Show fewer' : `Show ${hidden} more`}</button>` : '') + `</div>`
     + (name === 'Cards' && !W.matches ? `<div class="card"><h2>Referee</h2><div>${DATA.fixture.refLine}</div></div>` : '');
 }
@@ -114,7 +114,7 @@ function playersMatrix() {
     + `<div class="mx hd" ${cols}><span class="px mu">Player</span><span class="px mu">Team</span><span class="px mu r">Mins</span>${keys.map(s => `<span style="display:flex;flex-direction:column;gap:4px;align-items:center"><button class="sorter sm ${s.key === sk ? 'on' : ''}" data-a="pstat" data-id="${s.key}" aria-pressed="${s.key === sk}">${s.label}</button>${isCount(s) ? stepper('p.' + s.key, s, lines[s.key]) : '<span class="sm mu">Yes</span>'}</span>`).join('')}</div>`
     + all.map(r => {
       const rid = `x${r.ti}.${r.pi}`, open = !!S.open[rid], st = of(r, sk);
-      return `<div class="row"><button class="rh mx" ${cols} data-a="open" data-id="${rid}" aria-expanded="${open}"><span class="lab">${chev(open)}${r.p.name}</span><span class="sm mu">${T[r.ti].code} · ${r.p.pos}</span><span class="mono r mu">${r.p.mins}</span>`
+      return `<div class="row"><button class="rh mx" ${cols} data-a="open" data-id="${rid}" aria-expanded="${open}"><span class="lab">${chev(open)}${r.p.name}</span><span class="sm mu withjer">${jer(T[r.ti].code, 's')}${T[r.ti].code} · ${r.p.pos}</span><span class="mono r mu">${r.p.mins}</span>`
         + keys.map(s => { const c = r.c[s.key]; return `<span class="hc mono ${c.hot ? 'hot' : ''}" style="${c.hot ? '' : `background:rgba(var(--g-rgb),${(c.pct / 330).toFixed(2)})`}"><b>${c.n}/${c.N}</b></span>`; }).join('') + `</button>`
         + (open ? `<div class="det fade" style="padding-left:20px">${LEGEND}<b>${st.label}, ${lineShort(st, lines[sk])}</b>${detail(rid, st, r.ti, null, lines[sk], `p|${r.ti}|${r.pi}|${sk}`)}</div>` : '') + `</div>`;
     }).join('') + `</div></div>`;
@@ -132,7 +132,7 @@ function playersTab() {
     + `<div class="card" style="padding-top:4px"><div class="kv" style="align-items:center;padding:8px 0"><span>${count ? 'Line for every player' : 'Counts as a hit if it happened'}</span>${count ? stepper(id, st0, line) : ''}</div>`
     + (W.matches ? `<div class="prow whd px mu"><span>Player</span><span>Team</span><span class="r">Avg</span><span class="r">L5</span><span>Hits</span><span class="r">Mins</span></div>` : '')
     + rows.map(r => {
-      const rid = `p${r.ti}.${r.pi}.${key}`, open = !!S.open[rid], tag = `${T[r.ti].code} · ${r.p.pos}`;
+      const rid = `p${r.ti}.${r.pi}.${key}`, open = !!S.open[rid], tag = `${jer(T[r.ti].code, 's')} ${T[r.ti].code} · ${r.p.pos}`;
       return `<div class="row"><button class="rh ${W.matches ? 'prow' : ''} ${r.c.hot ? 'hot' : ''}" data-a="open" data-id="${rid}" aria-expanded="${open}">` + (W.matches
           ? `<span class="lab">${chev(open)}${r.p.name}</span><span class="sm mu">${tag}</span><span class="mono r">${count ? r.a.toFixed(1) : '-'}</span><span class="mono r">${r.c.n5}/${r.c.N5}</span><span class="hits"><b class="mono">${r.c.n}/${r.c.N}</b>${meter(r.c.pct)}</span><span class="mono r mu">${r.p.mins}</span>`
           : `<span class="lab">${chev(open)}<span style="flex:1">${r.p.name} <span class="mu sm" style="font-weight:400">${tag}</span></span><b class="mono">${r.c.n}/${r.c.N}</b></span>${meter(r.c.pct)}`) + `</button>`
@@ -150,7 +150,7 @@ function gamesPanel() {
   const comps = [...new Set(T.flatMap(t => t.games.map(g => g.comp)))];
   return `<div class="card fade" style="gap:12px"><div class="sm mu">Leave out a competition or a single game, such as a freak result or a cup tie against a weak side. Every hit rate updates.</div>`
     + `<div class="pills" style="flex-wrap:wrap;margin:0;padding:0">${comps.map(c => `<button data-a="comp" data-id="${c}" class="${S.comp[c] ? '' : 'on'}" aria-pressed="${!S.comp[c]}">${c}</button>`).join('')}</div>`
-    + T.map((t, ti) => `<div><div class="px mu">${t.name}, newest first</div>` + t.games.map((g, i) => [g, i]).reverse().map(([g, i]) => {
+    + T.map((t, ti) => `<div><div class="px mu withjer">${jer(t.code, 's')}${t.name}, newest first</div>` + t.games.map((g, i) => [g, i]).reverse().map(([g, i]) => {
       const out = S.off[ti + '.' + i] || S.comp[g.comp];
       return `<button class="gm ${out ? 'x' : ''}" data-a="game" data-id="${ti}.${i}" aria-pressed="${!out}"><span>${g.date} · ${g.ha === 'H' ? 'v' : '@'} ${g.opp}</span><span class="mono">${g.score} · ${g.comp}</span></button>`;
     }).join('') + `</div>`).join('')
@@ -162,8 +162,8 @@ function strongest(all) {
   const out = [];
   const best = (st, ti) => { const b = baseLine(st, pick(st, ti)); return [b + 1, b, b - 1].filter(l => l > 0).map(l => ({ l, ...rate(st, ti, l) })).find(x => x.hot); };
   T.forEach((t, ti) => {
-    t.groups.forEach(g => g.stats.filter(st => st.opp).forEach(st => { const b = best(st, ti); if (b) out.push({ who: t.name, text: `${t.name}: ${lineName(st, b.l).toLowerCase()} ${st.label.toLowerCase()}`, ...b, team: 1 }); }));
-    t.players.forEach(p => p.stats.filter(st => st.core && isCount(st)).forEach(st => { const b = best(st, ti); if (b) out.push({ who: p.name, text: `${p.name} ${lineName(st, b.l)} ${st.label.toLowerCase()}`, ...b, team: 0 }); }));
+    t.groups.forEach(g => g.stats.filter(st => st.opp).forEach(st => { const b = best(st, ti); if (b) out.push({ who: t.name, text: `${t.name}: ${lineName(st, b.l).toLowerCase()} ${st.label.toLowerCase()}`, ...b, team: 1, code: t.code }); }));
+    t.players.forEach(p => p.stats.filter(st => st.core && isCount(st)).forEach(st => { const b = best(st, ti); if (b) out.push({ who: p.name, text: `${p.name} ${lineName(st, b.l)} ${st.label.toLowerCase()}`, ...b, team: 0, code: t.code }); }));
   });
   const seen = {}, by = (a, b) => b.n / b.N - a.n / a.N || b.n5 - a.n5;
   if (all) return out.sort(by);
@@ -175,9 +175,9 @@ function sheetHTML() {
   const f = DATA.fixture, top = strongest(), hasP = T[0].players.length > 0;
   const wide = W.matches, tab = wide && TABS.slice(0, 5).includes(S.tab) ? 'Teams' : !wide && S.tab === 'Teams' ? 'Goals' : S.tab;
   const note = `<div class="note">Sample data. Every number on this sheet is made up for the demo.</div>`;
-  const title = `<div><a class="back sm" href="#/">← All fixtures</a><div class="px" style="margin-top:4px">${f.meta}</div><h1>${f.name}</h1></div>`;
+  const title = `<div><a class="back sm" href="#/">← All fixtures</a><div class="px" style="margin-top:4px">${f.meta}</div><h1 class="mt">${jer(T[0].code, 'l')}<span>${f.name}</span>${jer(T[1].code, 'l')}</h1></div>`;
   const head = `<div class="card strong"><h2>Strongest lines</h2>
-       ${top.length ? top.map(x => `<div class="kv"><span>${x.text}</span><span class="mono g" style="flex:none">${x.n}/${x.N}</span></div>`).join('') : `<div class="mu sm">No line landed in 80% of the selected games.</div>`}
+       ${top.length ? top.map(x => `<div class="kv"><span class="withjer">${jer(x.code)}${x.text}</span><span class="mono g" style="flex:none">${x.n}/${x.N}</span></div>`).join('') : `<div class="mu sm">No line landed in 80% of the selected games.</div>`}
        <div class="sm mu" style="padding-top:8px">Landed in at least 80% of the selected games and 4 of the last 5.</div></div>`;
   const list = (wide ? ['Teams', 'Players', 'Trends'] : TABS).filter(t => hasP || t !== 'Players');
   const tabs = `<div class="pills" data-k="tabs">${list.map(t => `<button data-a="tab" data-id="${t}" class="${tab === t ? 'on' : ''}">${t}</button>`).join('')}</div>`;

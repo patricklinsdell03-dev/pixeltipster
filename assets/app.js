@@ -15,22 +15,10 @@ const A = {
 };
 const save = () => { store.set('slip', A.slip); store.set('bets', A.bets); store.set('alerts', A.alerts); };
 
-const ICONS = {
-  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
-  check: '<rect x="4" y="4" width="16" height="17" rx="2"/><path d="m9 12 2 2 4-4"/>',
-  chart: '<path d="M3 20h18M7 16v-4M12 16V7M17 16v-6"/>',
-  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
-  tick: '<path d="m5 12 5 5 9-10"/>',
-  arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
-  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
-  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-  star: '<path d="m12 3 2.8 5.8 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.3l1.1-6.2L3 9.7l6.2-.9z"/>'
-};
-const ico = n => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
-
 /* ---------- Shell ---------- */
-const NAV = [['', 'Fixtures'], ['finder', 'Line finder'], ['check', 'Check my bet'], ['tracker', 'Bet tracker'], ['offers', 'Offers'], ['alerts', 'Alerts']];
+const NAV = [['', 'Fixtures', 'cal'], ['finder', 'Line finder', 'search'], ['check', 'Check my bet', 'check'], ['tracker', 'Bet tracker', 'chart'], ['offers', 'Offers', 'gift'], ['alerts', 'Alerts', 'bell']];
+/* page icon tiles: route -> [icon, colour] */
+const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], premium: ['star', '#1a2233'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
 const BNAV = [['', 'Fixtures', 'cal'], ['finder', 'Finder', 'search'], ['check', 'My bet', 'check'], ['tracker', 'Tracker', 'chart'], ['more', 'More', 'menu']];
 const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', premium: 'Premium', safer: 'Safer gambling', more: 'More' };
 const route = () => { const [p = '', id] = location.hash.replace(/^#\/?/, '').split('/'); return { p, id }; };
@@ -39,27 +27,28 @@ const cur = (k, p) => navOn(k, p) ? ' class="on" aria-current="page"' : '';
 const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
 const slipCount = () => A.slip.length ? `<span class="count">${A.slip.length}</span>` : '';
 
-const topBar = p => `<header class="site-top"><div class="in"><a class="logo" href="#/" aria-label="Pixeltipster home">PIXEL<span>TIPSTER</span></a>`
-  + `<nav class="nav" aria-label="Main">${NAV.map(([k, l]) => `<a href="#/${k}"${cur(k, p)}>${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`
+const topBar = p => `<header class="site-top"><div class="in"><a class="logo" href="#/" aria-label="Pixeltipster home">${ico('ball')}<b style="font-weight:inherit">PIXEL<span>TIPSTER</span></b></a>`
+  + `<nav class="nav" aria-label="Main">${NAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)}>${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`
   + `<div class="top-r"><button class="icon ghost" data-a="theme" data-id="t" aria-label="Switch to ${isDark() ? 'light' : 'dark'} mode">${ico(isDark() ? 'sun' : 'moon')}</button>`
-  + `<a class="btn hide-m" href="#/premium">${ico('star')}Go Premium</a></div></div></header>`;
+  + `<a class="btn hide-m" href="#/premium">${ico('star')}Go Premium</a></div></div><div class="pixstrip"></div></header>`;
 const bottomNav = p => `<nav class="bnav" aria-label="Main">${BNAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)} style="position:relative">${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`;
 const footer = () => `<footer class="foot"><div><b>18+</b> · Please gamble responsibly · <a href="#/safer">Safer gambling</a> · <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a></div>`
   + `<div class="mu sm">Pixeltipster publishes statistics about past matches. We don't take bets, give tips or predict results. This demo uses sample data.</div></footer>`;
-const pageHead = (title, sub, extra = '') => `<div class="head"><div><h1>${title}</h1>${sub ? `<p class="mu" style="margin-top:6px">${sub}</p>` : ''}</div>${extra}</div>`;
+const pageHead = (title, sub, extra = '') => { const [i, c] = PAGE_ICO[route().p] || []; return `<div class="head"><div>${i ? `<span class="ptile" style="background:${c}">${ico(i)}</span>` : ''}<h1>${title}</h1>${sub ? `<p class="mu" style="margin-top:6px">${sub}</p>` : ''}</div>${extra}</div>`; };
 const demo = txt => `<div class="note">${txt}</div>`;
 const pill = (k, v, l) => `<button data-a="${k}" data-id="${v}" class="${A[k] == v ? 'on' : ''}" aria-pressed="${A[k] == v}">${l}</button>`;
 
 /* ---------- Fixtures ---------- */
 function fixturesPage() {
   const comps = ['All', ...new Set(FIXTURES.map(f => f.comp))], list = FIXTURES.filter(f => A.comp === 'All' || f.comp === A.comp);
-  return `<section class="card hero"><div><h1>Stat sheets for every bet builder</h1><p class="mu">Hit rates from each team's and player's recent games, grouped the way bookmakers group their bet builder markets. Facts about past games, never tips.</p>`
+  return `<section class="card hero"><div><div class="kits" aria-hidden="true">${Object.keys(KITS).map(k => jer(k)).join('')}</div><h1>Stat sheets for every bet builder</h1><p class="mu">Hit rates from each team's and player's recent games, grouped the way bookmakers group their bet builder markets. Facts about past games, never tips.</p>`
     + `<div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap"><a class="btn" href="#/match/liv-mci">See an example sheet</a><a class="btn btn2" href="#/premium">Free vs Premium</a></div></div>`
     + `<ul class="trust">${['Every number links to the games behind it', 'Leave out cup games or freak results', 'No odds, no tips, no predictions', '3 free sheets a week, no card needed'].map(t => `<li>${ico('tick')}${t}</li>`).join('')}</ul></section>`
     + demo('Demo: fixtures and numbers are sample data until the live feed is connected.')
-    + `<div class="pills" data-k="fxcomp">${comps.map(c => `<button data-a="fxcomp" data-id="${c}" class="${A.comp === c ? 'on' : ''}" aria-pressed="${A.comp === c}">${c}</button>`).join('')}</div>`
+    + `<div class="pills" data-k="fxcomp">${comps.map(c => `<button data-a="fxcomp" data-id="${c}" class="${A.comp === c ? 'on' : ''}" aria-pressed="${A.comp === c}">${c === 'All' ? '' : compDot(c)}${c}</button>`).join('')}</div>`
     + [...new Set(list.map(f => f.date))].map(d => `<section><h2>${fmtDate(d)}</h2><div class="fxgrid">${list.filter(f => f.date === d).map(f =>
-      `<a class="card fx" href="#/match/${f.id}"><span class="px">${f.comp} · ${f.ko}</span><span class="fxt"><b>${f.home}</b><span class="mu">v</span><b>${f.away}</b></span>`
+      `<a class="card fx" href="#/match/${f.id}"><span class="fxbar" style="background:linear-gradient(90deg,${kitColor(f.hc)} 50%,${kitColor(f.ac)} 50%)"></span><span class="px">${compDot(f.comp)}${f.comp} · ${f.ko}</span>`
+      + `<span class="fxteam">${jer(f.hc)}<b>${f.home}</b></span><span class="fxteam">${jer(f.ac)}<b>${f.away}</b></span>`
       + `<span class="sm mu">${f.full ? 'Team, player and trend stats' : 'Team stats now · players at line-ups'}</span><span class="go">Open sheet ${ico('arrow')}</span></a>`).join('')}</div></section>`).join('');
 }
 
@@ -80,7 +69,7 @@ function finderPage() {
     + `<div style="display:flex;gap:16px;flex-wrap:wrap"><div class="pills">${[80, 90, 100].map(v => pill('fmin', v, `Landed ${v}%${v < 100 ? '+' : ''}`)).join('')}</div>`
     + `<div class="pills">${[['all', 'All lines'], ['team', 'Team'], ['player', 'Player']].map(([v, l]) => pill('fkind', v, l)).join('')}</div></div></div>`
     + `<div class="card"><div class="tbl"><div class="tr th px" style="${cols}"><span>${list.length} lines</span><span class="r">Hits</span><span class="r">Last 5</span></div>`
-    + (list.length ? list.map(x => `<a class="tr" style="${cols}" href="#/match/${x.f.id}"><span><b style="font-weight:600">${x.text}</b><br><span class="sm mu">${x.f.home} v ${x.f.away} · ${x.f.comp} · ${fmtDate(x.f.date)}</span></span>`
+    + (list.length ? list.map(x => `<a class="tr" style="${cols}" href="#/match/${x.f.id}"><span class="withjer">${jer(x.code)}<span><b style="font-weight:600">${x.text}</b><br><span class="sm mu">${x.f.home} v ${x.f.away} · ${x.f.comp} · ${fmtDate(x.f.date)}</span></span></span>`
       + `<b class="mono g r">${x.n}/${x.N}</b><span class="mono r mu">${x.n5}/${x.N5}</span></a>`).join('') : `<div class="tr mu">No lines match these filters.</div>`) + `</div></div>`;
 }
 
@@ -94,7 +83,7 @@ function legInfo(spec) {
   return withFixture(fx, () => {
     const t = kind === 't', ti = t ? +c : +a, st = t ? T[ti].groups[+a].stats[+b] : T[ti].players[+b].stats.find(s => s.key === c);
     const who = t ? T[ti].name : T[ti].players[+b].name;
-    return { spec, fx, ti, st, team: T[ti].name, match: DATA.fixture.name, r: rate(st, ti, line), text: `${who}: ${isCount(st) ? lineName(st, line).toLowerCase() + ' ' : ''}${st.label.toLowerCase()}` };
+    return { spec, fx, ti, st, team: T[ti].name, code: T[ti].code, match: DATA.fixture.name, r: rate(st, ti, line), text: `${who}: ${isCount(st) ? lineName(st, line).toLowerCase() + ' ' : ''}${st.label.toLowerCase()}` };
   });
 }
 function checkPage() {
@@ -110,8 +99,8 @@ function checkPage() {
   return pageHead('Check my bet <span class="prem">Premium</span>', 'Add legs from any sheet to see how often each one landed, and how often they landed together.', legs.length ? `<button data-a="clearslip" data-id="c">Clear all legs</button>` : '')
     + demo('Demo: sample data. Your legs are saved in this browser only.')
     + (!legs.length ? `<div class="card" style="gap:12px;align-items:flex-start"><h2>No legs yet</h2><p class="mu">Open a sheet, tap any stat and choose "Add to bet check".</p><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="#/">Browse fixtures</a><button data-a="demolegs" data-id="d">Try an example</button></div></div>`
-      : `<div class="split"><div class="card"><h2 style="padding-bottom:6px">Each leg on its own</h2><div class="tbl">${legs.map(l => `<div class="tr" style="${cols}"><span><b style="font-weight:600">${l.text}</b><br><span class="sm mu">${l.match} · last 10 games</span>`
-        + `<span class="meter ${l.r.hot ? 'hot' : ''}" style="margin-top:6px;display:block"><i style="width:${l.r.pct}%"></i></span></span><b class="mono r ${l.r.hot ? 'g' : ''}">${l.r.n}/${l.r.N}</b><button class="icon ghost" data-a="rmleg" data-id="${l.spec}" aria-label="Remove this leg">×</button></div>`).join('')}</div></div>`
+      : `<div class="split"><div class="card"><h2 style="padding-bottom:6px">Each leg on its own</h2><div class="tbl">${legs.map(l => `<div class="tr" style="${cols}"><span class="withjer">${jer(l.code)}<span style="flex:1"><b style="font-weight:600">${l.text}</b><br><span class="sm mu">${l.match} · last 10 games</span>`
+        + `<span class="meter ${l.r.hot ? 'hot' : ''}" style="margin-top:6px;display:block"><i style="width:${l.r.pct}%"></i></span></span></span><b class="mono r ${l.r.hot ? 'g' : ''}">${l.r.n}/${l.r.N}</b><button class="icon ghost" data-a="rmleg" data-id="${l.spec}" aria-label="Remove this leg">×</button></div>`).join('')}</div></div>`
         + `<div style="display:flex;flex-direction:column;gap:20px">${clashes.length ? `<div class="card" style="gap:8px;border-color:var(--bad)"><h2 class="bad">Clash found</h2>${clashes.map(c => `<p>${c}</p>`).join('')}</div>` : ''}`
         + `<div class="card" style="gap:10px"><h2>Landed together</h2>${together.join('') || `<p class="mu">Add two or more legs on the same team to see how often they landed in the same game.</p>`}`
         + `<p class="sm mu">Legs on different teams can't be combined this way, because each team's last 10 games are different matches.</p></div></div></div>`);
