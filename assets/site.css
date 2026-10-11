@@ -136,6 +136,8 @@ input,select{font:inherit;color:var(--tx);background:var(--s1);border:1px solid 
 .chips i.w{background:var(--warns);color:var(--warn)}
 @media (max-width:699px){.signup{grid-template-columns:1fr}}
 @media (min-width:1000px) and (max-width:1299px){.nav a{padding:0 9px}.nav a>.pi,.planbtn{display:none}.site-top .in{gap:18px}}
+.chban{flex-direction:row;align-items:center;gap:14px;text-decoration:none;color:inherit;border-top:4px solid #e08a00}
+.chban .ptile{margin:0;flex:none}.chban>span:nth-child(2){flex:1}.chban:hover b{color:var(--y)}
 .warnbox{border-color:var(--bad);color:var(--bad);font-weight:500}
 @media (max-width:699px){.fxrow{grid-template-columns:44px minmax(0,1fr) 18px}.fxb{grid-column:2;justify-content:flex-start}.fxrow>.pi{grid-row:1;grid-column:3}}
 .fxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:10px}

@@ -12,17 +12,17 @@ const A = {
   slip: store.get('slip', []), bets: store.get('bets', null),
   alerts: store.get('alerts', { lineups: true, refs: true, trends: false, finder: false, tg: true, email: false }),
   comp: 'All', day: 'All', big: false, mine: false, q: '', fcomp: 'All', fkind: 'all', ftab: 'form', otab: 'signup',
-  plan: store.get('plan', 'free'), favs: store.get('favs', []), signed: false, emailErr: false, share: null,
+  plan: store.get('plan', 'free'), favs: store.get('favs', []), entry: store.get('entry', null), signed: false, emailErr: false, share: null,
   calc: { type: 'Lucky 15', n: 5, ew: false, frac: 0.25, stake: '1', sels: [] }
 };
 const save = () => { store.set('slip', A.slip); store.set('bets', A.bets); store.set('alerts', A.alerts); };
 
 /* ---------- Shell ---------- */
-const NAV = [['', 'Fixtures', 'cal'], ['finder', 'Line finder', 'search'], ['check', 'Check my bet', 'check'], ['tracker', 'Bet tracker', 'chart'], ['calc', 'Calculator', 'calc'], ['offers', 'Offers', 'gift']];
+const NAV = [['', 'Fixtures', 'cal'], ['finder', 'Line finder', 'search'], ['check', 'Check my bet', 'check'], ['challenge', 'Challenge', 'trophy'], ['tracker', 'Bet tracker', 'chart'], ['offers', 'Offers', 'gift']];
 /* page icon tiles: route -> [icon, colour] */
-const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], calc: ['calc', '#19a974'], refs: ['card', '#1a2233'], ref: ['card', '#1a2233'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
+const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], calc: ['calc', '#19a974'], challenge: ['trophy', '#e08a00'], refs: ['card', '#1a2233'], ref: ['card', '#1a2233'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
 const BNAV = [['', 'Fixtures', 'cal'], ['finder', 'Finder', 'search'], ['check', 'My bet', 'check'], ['tracker', 'Tracker', 'chart'], ['more', 'More', 'menu']];
-const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', calc: 'Bet returns calculator', refs: 'Referees', ref: 'Referee', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
+const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', calc: 'Bet returns calculator', challenge: 'Weekly challenge', refs: 'Referees', ref: 'Referee', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
 const route = () => { const [p = '', id] = location.hash.replace(/^#\/?/, '').split('/'); return { p, id }; };
 const navOn = (k, p) => k === p || (k === '' && p === 'match') || (k === 'more' && ['offers', 'alerts', 'premium', 'how', 'safer'].includes(p));
 const cur = (k, p) => navOn(k, p) ? ' class="on" aria-current="page"' : '';
@@ -60,7 +60,7 @@ function fixturesPage() {
   return `<section class="card hero"><div><div class="kits" aria-hidden="true">${Object.keys(KITS).map(k => jer(k)).join('')}</div><h1>Stat sheets for every bet builder</h1><p class="mu">Hit rates from each team's and player's recent games, grouped the way bookmakers group their bet builder markets. Facts about past games, never tips.</p>`
     + `<div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap"><a class="btn" href="#/match/liv-mci">See an example sheet</a><a class="btn btn2" href="#/how">How the numbers work</a></div></div>`
     + `<ul class="trust">${['Every number links to the games behind it', 'Leave out cup games or freak results', 'No odds, no tips, no predictions', 'Every sheet free to open, no card needed'].map(t => `<li>${ico('tick')}${t}</li>`).join('')}</ul></section>`
-    + demo('Demo: fixtures and numbers are sample data until the live feed is connected.') + signupCard()
+    + demo('Demo: fixtures and numbers are sample data until the live feed is connected.') + signupCard() + challengeBanner()
     + `<div class="card fxfilters"><div class="fxsearch"><input id="fxq" type="search" placeholder="Search for a team" value="${esc(A.q)}" aria-label="Search fixtures by team" autocomplete="off">`
     + `<button data-a="big" data-id="b" class="${A.big ? 'on' : ''}" aria-pressed="${A.big}">${ico('star')}Big games</button><button data-a="mine" data-id="m" class="${A.mine ? 'on' : ''}" aria-pressed="${A.mine}">My teams${A.favs.length ? ` (${A.favs.length})` : ''}</button></div>`
     + `<div class="pills" data-k="fxday">${days.map(d => `<button data-a="fxday" data-id="${d}" class="${A.day === d ? 'on' : ''}" aria-pressed="${A.day === d}">${d === 'All' ? 'All days' : dayName(d)}</button>`).join('')}</div>`
@@ -180,7 +180,7 @@ function checkPage() {
         + `<div class="card share" style="gap:12px"><h2>Share it</h2><p class="mu">Make a picture of this check for WhatsApp, Telegram or X.</p>`
         + (A.share ? `<img src="${A.share}" alt="Picture of your bet check with each leg's hit rate"><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="${A.share}" download="pixeltipster-bet.png">Download picture</a>`
           + (navigator.canShare ? `<button data-a="sharefile" data-id="s">Share</button>` : '') + `</div>` : `<button class="btn" data-a="share" data-id="s" style="align-self:flex-start">Make picture</button>`) + `</div>`
-        + buildCard());
+        + `<a class="btn btn2" href="#/challenge" style="align-self:flex-start">${ico('trophy')}Enter these legs in the weekly challenge</a>` + buildCard());
 }
 
 /* ---------- Bet tracker ---------- */
@@ -192,6 +192,31 @@ const SAMPLE_BETS = [
 ].map(([date, bk, type, stake, odds, res]) => ({ date, bk, type, stake, odds, res }));
 const START = { 'Bookmaker A': 50, 'Bookmaker B': 40, 'Bookmaker C': 60 };   // sample starting balances
 const TYPES = ['Bet builder', 'Single', 'Acca', 'Lucky 15', 'Other'];
+/* Sample single bets with the market and its base rate (how often that line landed for those teams in their
+   last 10 when the bet was placed). On the live site, bets added from a sheet record the base rate themselves. */
+const MARKETS = [['Over 2.5 goals', 0.48, 0.06], ['Both teams to score', 0.52, -0.04], ['Match corners over 9.5', 0.45, 0.03], ['Player 1+ shots on target', 0.6, -0.07], ['Team cards over 1.5', 0.55, 0.01]];
+(() => {
+  const r = rng(hash('sample-bets'));
+  for (let i = 0; i < 100; i++) {
+    const [market, base, d] = MARKETS[i % 5];
+    SAMPLE_BETS.push({ date: new Date(Date.UTC(2026, 7, 16) + i * 0.55 * 864e5).toISOString().slice(0, 10), bk: 'Bookmaker ' + 'ABC'[i % 3], type: 'Single', stake: 5,
+      odds: +(1 / (base * 1.07) + (r() - 0.5) * 0.2).toFixed(2), res: r() < base + d ? 'Won' : 'Lost', market, base: +(base + (r() - 0.5) * 0.1).toFixed(2) });
+  }
+  SAMPLE_BETS.sort((a, b) => b.date.localeCompare(a.date));
+})();
+/* Edge report: landed rate vs base rate per market. Gaps under 2 standard errors are labelled as possibly luck. */
+function edgeReport(done) {
+  const m = {};
+  done.filter(b => b.market && b.base && b.res !== 'Void').forEach(b => { const x = m[b.market] ??= { n: 0, won: 0, base: 0, st: 0, ret: 0 }; x.n++; x.won += b.res === 'Won'; x.base += b.base; x.st += b.stake; x.ret += back(b); });
+  const rows = Object.entries(m).map(([k, x]) => { const p = x.won / x.n, b = x.base / x.n; return { k, n: x.n, p, b, gap: p - b, roi: (x.ret - x.st) / x.st, sure: Math.abs(p - b) / Math.sqrt(b * (1 - b) / x.n) >= 2 }; }).sort((a, b) => b.gap - a.gap);
+  if (!rows.length) return '';
+  const pc = v => Math.round(v * 100) + '%', cols = 'grid-template-columns:minmax(0,1fr) 54px 70px 70px 70px 76px';
+  return `<div class="card"><h2>Your edge report</h2><p class="mu" style="margin:6px 0 10px">How often your picks landed, against the base rate: how often that line landed for those teams in their last 10 games when you placed the bet. Beating the base rate is the honest test of whether you're picking well.</p>`
+    + `<div class="mxwrap"><div class="tbl" style="min-width:560px"><div class="tr th px" style="${cols}"><span>Market</span><span class="r">Picks</span><span class="r">Landed</span><span class="r">Base rate</span><span class="r">Gap</span><span class="r">Return</span></div>`
+    + rows.map(x => `<div class="tr" style="${cols}"><span>${x.k}<br><span class="sm ${x.sure ? (x.gap > 0 ? 'g' : 'bad') : 'mu'}">${x.sure ? (x.gap > 0 ? 'Clearly above the base rate' : 'Clearly below the base rate') : 'Gap this size could easily be luck'}</span></span>`
+      + `<span class="mono r">${x.n}</span><span class="mono r">${pc(x.p)}</span><span class="mono r mu">${pc(x.b)}</span><b class="mono r ${x.gap > 0 ? 'g' : 'bad'}">${x.gap > 0 ? '+' : ''}${Math.round(x.gap * 100)}</b><span class="mono r ${x.roi < 0 ? 'bad' : 'g'}">${x.roi > 0 ? '+' : ''}${Math.round(x.roi * 100)}%</span></div>`).join('')
+    + `</div></div><p class="sm mu" style="margin-top:10px">Gap is in percentage points. Return is profit as a share of stakes, at your own prices. Small samples swing a lot: you need dozens of picks per market before a gap means much.</p></div>`;
+}
 const back = b => b.res === 'Won' ? b.stake * b.odds : b.res === 'Void' ? b.stake : 0;
 const money = v => (v < 0 ? '-£' : '£') + Math.abs(v).toFixed(2);
 function trackerPage() {
@@ -204,18 +229,18 @@ function trackerPage() {
   return pageHead('Bet tracker <span class="prem">Premium</span>', 'Log your bets to see your balance at each bookmaker and which kinds of bet cost you money.')
     + demo(sample ? 'Demo: these are sample bets. Adding your first bet clears them. Bets are saved in this browser only.' : 'Your bets are saved in this browser only.')
     + blurred(`<div class="tiles">${tile('Staked', money(staked))}${tile('Returned', money(returned))}${tile('Profit or loss', money(pl), pl < 0 ? 'bad' : 'g')}${tile('Bets settled', done.length)}</div>`
-    + `<div class="split"><div class="card" style="gap:10px"><h2>By bet type</h2>${types[0] && types[0][1].pl < 0 ? `<p class="mu">${types[0][0]} bets have cost you the most: ${money(types[0][1].pl)} over ${types[0][1].n} bets.</p>` : ''}`
+    + edgeReport(done) + `<div class="split"><div class="card" style="gap:10px"><h2>By bet type</h2>${types[0] && types[0][1].pl < 0 ? `<p class="mu">${types[0][0]} bets have cost you the most: ${money(types[0][1].pl)} over ${types[0][1].n} bets.</p>` : ''}`
     + types.map(([t, x]) => `<div style="display:flex;flex-direction:column;gap:4px"><div class="kv"><span>${t} <span class="mu sm">· ${x.n} bets</span></span><b class="mono ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</b></div><div class="bar2"><i style="width:${Math.abs(x.pl) / top * 100}%;background:var(--${x.pl < 0 ? 'bad' : 'g'})"></i></div></div>`).join('') + `</div>`
     + `<div class="card"><h2 style="padding-bottom:6px">Bookmaker balances</h2><div class="tbl"><div class="tr th px" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span>Bookmaker</span><span class="r">Start</span><span class="r">P/L</span><span class="r">Balance</span></div>`
     + books.map(([k, x]) => `<div class="tr mono" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span style="font-family:'IBM Plex Sans'">${esc(k)}</span><span class="r mu">${money(START[k] || 0)}</span><span class="r ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</span><b class="r">${money((START[k] || 0) + x.pl)}</b></div>`).join('') + `</div></div></div>`
     + `<div class="card" style="gap:12px"><h2>Add a bet</h2><div class="form"><label>Date<input id="nb-date" type="date" value="2026-10-11"></label><label>Bookmaker<input id="nb-bk" placeholder="e.g. Bookmaker A"></label>`
-    + `<label>Type<select id="nb-type">${TYPES.map(t => `<option>${t}</option>`).join('')}</select></label><label>Stake (£)<input id="nb-stake" type="number" min="0" step="0.5" inputmode="decimal"></label>`
+    + `<label>Market<select id="nb-mkt">${[...MARKETS.map(m => m[0]), 'Other'].map(t => `<option>${t}</option>`).join('')}</select></label><label>Type<select id="nb-type">${TYPES.map(t => `<option>${t}</option>`).join('')}</select></label><label>Stake (£)<input id="nb-stake" type="number" min="0" step="0.5" inputmode="decimal"></label>`
     + `<label>Odds (decimal)<input id="nb-odds" type="number" min="1" step="0.01" inputmode="decimal"></label><label>Result<select id="nb-res">${['Pending', 'Won', 'Lost', 'Void'].map(t => `<option>${t}</option>`).join('')}</select></label>`
     + `<button class="btn" data-a="addbet" data-id="b">Add bet</button></div></div>`
     + `<div class="card"><div class="head" style="padding-bottom:6px"><h2>Your bets</h2>${sample ? `<button data-a="clearbets" data-id="x">Clear sample bets</button>` : bets.length ? '' : `<button data-a="samplebets" data-id="s">Show sample bets</button>`}</div><div class="mxwrap"><div class="tbl" style="min-width:640px">`
     + `<div class="tr th px" style="${hc}"><span>Date</span><span>Bookmaker</span><span>Type</span><span class="r">Stake</span><span class="r">Odds</span><span>Result</span><span class="r">Return</span></div>`
-    + (bets.map(b => `<div class="tr" style="${hc}"><span class="mono sm">${b.date.slice(5).split('-').reverse().join('/')}</span><span>${esc(b.bk)}</span><span>${esc(b.type)}</span><span class="mono r">${money(b.stake)}</span><span class="mono r">${b.odds ? b.odds.toFixed(2) : '-'}</span>`
-      + `<span class="${b.res === 'Won' ? 'g' : b.res === 'Lost' ? 'bad' : 'mu'}">${b.res}</span><span class="mono r">${b.res === 'Pending' ? '-' : money(back(b))}</span></div>`).join('') || `<div class="tr mu">No bets yet.</div>`) + `</div></div></div>`, 'The bet tracker');
+    + (bets.slice(0, 25).map(b => `<div class="tr" style="${hc}"><span class="mono sm">${b.date.slice(5).split('-').reverse().join('/')}</span><span>${esc(b.bk)}</span><span>${esc(b.type)}</span><span class="mono r">${money(b.stake)}</span><span class="mono r">${b.odds ? b.odds.toFixed(2) : '-'}</span>`
+      + `<span class="${b.res === 'Won' ? 'g' : b.res === 'Lost' ? 'bad' : 'mu'}">${b.res}</span><span class="mono r">${b.res === 'Pending' ? '-' : money(back(b))}</span></div>`).join('') || `<div class="tr mu">No bets yet.</div>`) + (bets.length > 25 ? `<div class="tr sm mu">Showing the latest 25 of ${bets.length}.</div>` : '') + `</div></div></div>`, 'The bet tracker');
 }
 
 /* ---------- Offers ---------- */
@@ -268,7 +293,7 @@ function saferPage() {
 }
 
 const morePage = () => pageHead('More', '')
-  + `<div class="card links">${[['calc', 'Bet returns calculator'], ['refs', 'Referees'], ['offers', 'Bookmaker offers'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
+  + `<div class="card links">${[['challenge', 'Weekly challenge'], ['calc', 'Bet returns calculator'], ['refs', 'Referees'], ['offers', 'Bookmaker offers'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
   + `<button data-a="theme" data-id="t2" style="align-self:flex-start;display:inline-flex;gap:8px;align-items:center">${ico(isDark() ? 'sun' : 'moon')}${isDark() ? 'Light' : 'Dark'} mode</button>`
   + `<button data-a="plan" data-id="p2" style="align-self:flex-start">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b> (tap to switch)</button>`;
 
@@ -288,6 +313,8 @@ function appAction(a, id, d) {
   else if (a === 'plan') { A.plan = isPrem() ? 'free' : 'premium'; store.set('plan', A.plan); }
   else if (a === 'fav') { A.favs = A.favs.includes(id) ? A.favs.filter(c => c !== id) : [...A.favs, id]; store.set('favs', A.favs); }
   else if (a === 'mine') A.mine = !A.mine;
+  else if (a === 'enter') { A.entry = A.slip.slice(0, 3); store.set('entry', A.entry); }
+  else if (a === 'unenter') { A.entry = null; store.set('entry', null); }
   else if (a === 'signup') { const e = v('email').trim(); A.emailErr = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); A.signed = !A.emailErr; }
   else if (a === 'ctype') A.calc.type = id;
   else if (a === 'cn') A.calc.n = Math.min(12, Math.max(2, A.calc.n + +d));
@@ -299,7 +326,7 @@ function appAction(a, id, d) {
   else if (a === 'clearbets') A.bets = [];
   else if (a === 'samplebets') A.bets = null;
   else if (a === 'addbet') {
-    const b = { date: v('nb-date') || '2026-10-11', bk: v('nb-bk').trim() || 'Bookmaker', type: v('nb-type'), stake: +v('nb-stake'), odds: +v('nb-odds') || 0, res: v('nb-res') };
+    const b = { date: v('nb-date') || '2026-10-11', bk: v('nb-bk').trim() || 'Bookmaker', type: v('nb-type'), market: v('nb-mkt') === 'Other' ? null : v('nb-mkt'), stake: +v('nb-stake'), odds: +v('nb-odds') || 0, res: v('nb-res') };
     if (!(b.stake > 0)) { document.getElementById('nb-stake').focus(); return false; }
     A.bets = [b, ...(A.bets || [])];
   } else if (a === 'theme') {
@@ -310,7 +337,7 @@ function appAction(a, id, d) {
   return true;
 }
 
-const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, calc: calcPage, refs: refsPage, ref: refPage, safer: saferPage, more: morePage };
+const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, calc: calcPage, challenge: challengePage, refs: refsPage, ref: refPage, safer: saferPage, more: morePage };
 function render() {
   const r = route(), site = document.getElementById('site');
   const sx = {}; site.querySelectorAll('.pills[data-k]').forEach(p => sx[p.dataset.k] = p.scrollLeft);

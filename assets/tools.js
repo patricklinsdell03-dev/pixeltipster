@@ -58,6 +58,32 @@ async function shareImage(legs, together) {
   return new Promise(res => c.toBlob(res, 'image/png'));
 }
 
+/* ---------- Weekly bet builder challenge: free, points only, no money staked ----------
+   Pick 3 legs. Each leg that lands scores 100 minus its hit rate (%) in the last 10 games,
+   so a 10/10 line scores nothing and bolder lines score more. All 3 landing doubles the score. */
+const CH = { closes: 'Sat 17 Oct, 15:00', prize: 'a month of Premium' };
+const BOARD = [['cornerqueen', 'ARS', 248, 3], ['xg_merchant', 'LIV', 191, 3], ['statsnotvibes', 'INT', 164, 2], ['lateonbtts', 'BVB', 150, 2], ['pixelpunter', 'RMA', 133, 2],
+  ['fourfoldfred', 'NEW', 120, 2], ['halfwaylines', 'MCI', 96, 2], ['the_overs_guy', 'PSG', 81, 1], ['shotsontarget9', 'BAR', 70, 1], ['tacklecount', 'JUV', 55, 1]];
+const chPoints = l => 100 - l.r.pct;
+const challengeBanner = () => `<a class="card chban" href="#/challenge"><span class="ptile" style="background:#e08a00">${ico('trophy')}</span><span><b>Weekly bet builder challenge</b><br>`
+  + `<span class="mu sm">Free to enter, points not money. Pick 3 legs: bolder lines score more. Top 3 win ${CH.prize}.</span></span>${ico('arrow')}</a>`;
+function challengePage() {
+  const slip = A.slip.slice(0, 3).map(legInfo), entry = A.entry && A.entry.map(legInfo), best = ls => ls.reduce((s, l) => s + chPoints(l), 0) * 2;
+  const legRow = l => `<div class="tr" style="grid-template-columns:minmax(0,1fr) 70px"><span class="withjer">${jer(l.code)}<span><b style="font-weight:600">${l.text}</b><br><span class="sm mu">${l.match} · landed ${l.r.n}/${l.r.N}</span></span></span><b class="mono r">${chPoints(l)} pts</b></div>`;
+  return pageHead('Weekly bet builder challenge', `Free to enter. Points, not money. Entries close ${CH.closes}.`)
+    + demo('Demo: entries are saved in this browser only, and the leaderboard is sample data.')
+    + `<div class="split"><div class="card" style="gap:12px"><h2>How it works</h2><ol class="steps" style="grid-template-columns:1fr">`
+    + `<li>Pick 3 legs from this weekend's sheets with "Add to bet check".</li><li>Each leg that lands scores 100 minus its hit rate. A line that landed 9/10 scores 10; one that landed 4/10 scores 60.</li>`
+    + `<li>If all 3 land, your score doubles.</li><li>The top 3 each week win ${CH.prize}. Free to enter, 18+ only.</li></ol></div>`
+    + `<div class="card" style="gap:10px"><h2>Your entry</h2>`
+    + (entry ? `<div class="tbl">${entry.map(legRow).join('')}</div><p class="sm mu">Best possible score: <b class="mono">${best(entry)}</b> points if all 3 land. Scores go up after the last game.</p><button data-a="unenter" data-id="u" style="align-self:flex-start">Change my entry</button>`
+      : slip.length < 3 ? `<p class="mu">You have ${slip.length} of 3 legs. Open a sheet, tap a stat and choose "Add to bet check".</p><a class="btn" href="#/" style="align-self:flex-start">Browse fixtures</a>`
+      : `<div class="tbl">${slip.map(legRow).join('')}</div><p class="sm mu">Your first 3 legs from Check my bet. Best possible score: <b class="mono">${best(slip)}</b> points.</p><button class="btn" data-a="enter" data-id="e" style="align-self:flex-start">Enter these 3 legs</button>`)
+    + `</div></div><div class="card"><h2 style="padding-bottom:6px">Last week's leaderboard</h2><div class="tbl">`
+    + BOARD.map(([n, code, pts, legs], i) => `<div class="tr" style="grid-template-columns:36px minmax(0,1fr) 80px 70px"><b class="mono ${i < 3 ? 'g' : 'mu'}">${i + 1}</b><span class="withjer">${jer(code)}<b style="font-weight:600">${n}</b></span><span class="sm mu r">${legs}/3 landed</span><b class="mono r">${pts}</b></div>`).join('')
+    + `</div></div>`;
+}
+
 /* ---------- Referees ---------- */
 function refsPage() {
   return pageHead('Referees', 'Cards and fouls in each referee\'s last 10 games. Cards are one of the biggest bet builder markets.')
