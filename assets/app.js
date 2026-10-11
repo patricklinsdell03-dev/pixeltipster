@@ -240,7 +240,7 @@ function premiumPage() {
   return pageHead('Free and Premium', 'Start free. Upgrade if the extra tools are worth it to you.')
     + demo('Demo: prices are provisional and sign-up is not open yet.')
     + `<div class="plans"><div class="card"><h2>Free</h2><div class="price">£0</div><ul>${['3 full sheets a week', 'Strongest lines on every sheet', 'Games filter and line controls', 'Free Telegram channel'].map(li).join('')}</ul><a class="btn btn2" href="#/">Browse fixtures</a></div>`
-    + `<div class="card" style="border-color:var(--y);box-shadow:0 0 0 1px var(--y)"><h2>Premium <span class="prem">7-day free trial</span></h2><div class="price">£4.99<span class="mu" style="font-size:15px;font-weight:400"> a month</span></div><div class="sm mu">or £39 a year</div>`
+    + `<div class="card" style="border-color:var(--y);box-shadow:0 0 0 1px var(--y)"><h2>Premium <span class="prem">14-day free trial</span></h2><div class="price">£4.99<span class="mu" style="font-size:15px;font-weight:400"> a month</span></div><div class="sm mu">or £39 a year</div>`
     + `<ul>${['Every sheet in every competition', 'Line finder across all games', 'Check my bet, with clash warnings', 'Line-up and referee alerts', 'Bet tracker and bet-type report'].map(li).join('')}</ul><button class="btn" disabled>Start free trial (coming soon)</button></div></div>`
     + `<div class="card" style="gap:10px;max-width:900px"><h2>Good to know</h2><p><b>Cancel any time.</b> Premium stays on until the end of the period you've paid for.</p>`
     + `<p><b>We don't sell tips.</b> Premium gives you more stats and tools. It doesn't make any bet more likely to win.</p><p><b>Stay in control.</b> If betting stops being fun, see our <a href="#/safer">safer gambling page</a>.</p></div>`;
