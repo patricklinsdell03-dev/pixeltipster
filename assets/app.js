@@ -21,25 +21,25 @@ const A = {
 const save = () => { store.set('slip', A.slip); store.set('bets', A.bets); store.set('alerts', A.alerts); };
 
 /* ---------- Shell ---------- */
-const NAV = [['', 'Football', 'cal'], ['racing', 'Racing', 'horse'], ['tester', 'Backtester', 'flask'], ['check', 'My bet', 'check'], ['challenge', 'Challenge', 'trophy'], ['offers', 'Offers', 'gift']];
-const NAV_MORE = [['finder', 'Line finder'], ['tracker', 'Bet tracker'], ['calc', 'Returns calculator'], ['refs', 'Referees'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']];
+const NAV = [['', 'Football', 'cal'], ['racing', 'Racing', 'horse'], ['tester', 'Backtester', 'flask'], ['tracker', 'Bet tracker', 'chart'], ['challenge', 'Challenge', 'trophy'], ['offers', 'Offers', 'gift']];
+const NAV_MORE = [['finder', 'Line finder'], ['calc', 'Returns calculator'], ['refs', 'Referees'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']];
 /* page icon tiles: route -> [icon, colour] */
-const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], calc: ['calc', '#19a974'], challenge: ['trophy', '#e08a00'], racing: ['horse', '#8e1f2f'], race: ['horse', '#8e1f2f'], tester: ['flask', '#7b3fe4'], refs: ['card', '#1a2233'], ref: ['card', '#1a2233'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
-const BNAV = [['', 'Football', 'cal'], ['racing', 'Racing', 'horse'], ['tester', 'Tester', 'flask'], ['check', 'My bet', 'check'], ['more', 'More', 'menu']];
-const TITLES = { '': 'Football', racing: 'Racing', race: 'Race', tester: 'Backtester', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', calc: 'Bet returns calculator', challenge: 'Weekly challenge', refs: 'Referees', ref: 'Referee', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
+const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['chart', '#7b3fe4'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], calc: ['calc', '#19a974'], challenge: ['trophy', '#e08a00'], racing: ['horse', '#8e1f2f'], race: ['horse', '#8e1f2f'], tester: ['flask', '#7b3fe4'], refs: ['card', '#1a2233'], ref: ['card', '#1a2233'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
+const BNAV = [['', 'Football', 'cal'], ['racing', 'Racing', 'horse'], ['tester', 'Tester', 'flask'], ['tracker', 'Tracker', 'chart'], ['more', 'More', 'menu']];
+const TITLES = { '': 'Football', racing: 'Racing', race: 'Race', tester: 'Backtester', finder: 'Line finder', check: 'Bet tracker', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', calc: 'Bet returns calculator', challenge: 'Weekly challenge', refs: 'Referees', ref: 'Referee', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
 const route = () => { const [p = '', id] = location.hash.replace(/^#\/?/, '').split('/'); return { p, id }; };
-const navOn = (k, p) => k === p || (k === '' && p === 'match') || (k === 'racing' && p === 'race') || (k === 'more' && ['finder', 'tracker', 'calc', 'refs', 'ref', 'challenge', 'offers', 'alerts', 'premium', 'how', 'safer'].includes(p));
+const navOn = (k, p) => k === p || (k === 'tracker' && p === 'check') || (k === '' && p === 'match') || (k === 'racing' && p === 'race') || (k === 'more' && ['finder', 'tracker', 'calc', 'refs', 'ref', 'challenge', 'offers', 'alerts', 'premium', 'how', 'safer'].includes(p));
 const cur = (k, p) => navOn(k, p) ? ' class="on" aria-current="page"' : '';
 const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
 const slipCount = () => A.slip.length ? `<span class="count">${A.slip.length}</span>` : '';
 
 const topBar = p => `<header class="site-top"><div class="in"><a class="logo" href="#/" aria-label="Pixeltipster home">${ico('ball')}<b style="font-weight:inherit">PIXEL<span>TIPSTER</span></b></a>`
-  + `<nav class="nav" aria-label="Main">${NAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)}>${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}`
+  + `<nav class="nav" aria-label="Main">${NAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)}>${ico(i)}${l}${k === 'tracker' ? slipCount() : ''}</a>`).join('')}`
   + `<details class="navmore"><summary${NAV_MORE.some(([k]) => k === p || (k === 'refs' && p === 'ref')) ? ' class="on"' : ''}>More</summary><div class="menu">${NAV_MORE.map(([k, l]) => `<a href="#/${k}">${l}</a>`).join('')}</div></details></nav>`
   + `<div class="top-r"><button class="planbtn hide-m" data-a="plan" data-id="p" title="Demo only: see the site as a free or Premium member">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b></button>`
   + `<a class="icon btn btn2" href="#/alerts" aria-label="Alerts">${ico('bell')}</a><button class="icon ghost" data-a="theme" data-id="t" aria-label="Switch to ${isDark() ? 'light' : 'dark'} mode">${ico(isDark() ? 'sun' : 'moon')}</button>`
   + `<a class="btn hide-m" href="#/premium">${ico('star')}Go Premium</a></div></div><div class="pixstrip"></div></header>`;
-const bottomNav = p => `<nav class="bnav" aria-label="Main">${BNAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)} style="position:relative">${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`;
+const bottomNav = p => `<nav class="bnav" aria-label="Main">${BNAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)} style="position:relative">${ico(i)}${l}${k === 'tracker' ? slipCount() : ''}</a>`).join('')}</nav>`;
 const footer = () => `<footer class="foot"><div><b>18+</b> · Please gamble responsibly · <a href="#/safer">Safer gambling</a> · <a href="#/how">How the numbers work</a> ·<a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a></div>`
   + `<div class="mu sm">Pixeltipster publishes statistics about past matches. We don't take bets, give tips or predict results. This demo uses sample data.</div></footer>`;
 const pageHead = (title, sub, extra = '') => { const [i, c] = PAGE_ICO[route().p] || []; return `<div class="head"><div>${i ? `<span class="ptile" style="background:${c}">${ico(i)}</span>` : ''}<h1>${title}</h1>${sub ? `<p class="mu" style="margin-top:6px">${sub}</p>` : ''}</div>${extra}</div>`; };
@@ -149,7 +149,7 @@ function howPage() {
     + `</div>`;
 }
 
-/* ---------- Check my bet ---------- */
+/* ---------- Bet check (a tab of the bet tracker) ---------- */
 const addLegBtn = spec => A.slip.includes(spec)
   ? `<button class="addleg done ghost" data-a="addleg" data-id="${spec}">${ico('tick')} In your bet check</button>`
   : `<button class="addleg ghost" data-a="addleg" data-id="${spec}">+ Add to bet check</button>`;
@@ -162,7 +162,7 @@ function legInfo(spec) {
     return { spec, fx, ti, st, team: T[ti].name, code: T[ti].code, match: DATA.fixture.name, r: rate(st, ti, line), text: `${who}: ${isCount(st) ? lineName(st, line).toLowerCase() + ' ' : ''}${st.label.toLowerCase()}` };
   });
 }
-function checkPage() {
+function checkBody() {
   const legs = A.slip.map(legInfo), groups = {};
   legs.forEach(l => (groups[l.fx + '|' + l.ti] ??= []).push(l));
   const clashes = legs.filter(l => l.st.key === 'cs' && legs.some(m => m.fx === l.fx && (m.st.key === 'btts' || (m.ti === l.ti && m.st.key === 'conceded') || (m.ti !== l.ti && m.st.key === 'goals'))))
@@ -174,7 +174,7 @@ function checkPage() {
     return `<div class="box" style="display:flex;flex-direction:column;gap:6px"><span>All ${g.length} ${g[0].team} legs landed together in <b class="mono">${n}/10</b> of their last 10 games.</span><span class="meter"><i style="width:${n * 10}%;background:var(--g);opacity:1"></i></span></div>`;
   });
   const cols = 'grid-template-columns:minmax(0,1fr) 56px 44px';
-  return pageHead('Check my bet <span class="prem">Premium</span>', 'Add legs from any sheet to see how often each one landed, and how often they landed together.', legs.length ? `<button data-a="clearslip" data-id="c">Clear all legs</button>` : '')
+  return `<div class="head"><p class="mu">Add legs from any sheet to see how often each one landed, and how often they landed together. Then log it as a bet.</p>${legs.length ? `<span style="display:flex;gap:8px"><button data-a="logslip" data-id="l">Log this as a bet</button><button data-a="clearslip" data-id="c">Clear all legs</button></span>` : ''}</div>`
     + demo('Demo: sample data. Your legs are saved in this browser only.')
     + (!legs.length ? `<div class="card" style="gap:12px;align-items:flex-start"><h2>No legs yet</h2><p class="mu">Open a sheet, tap any stat and choose "Add to bet check".</p><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="#/">Browse fixtures</a><button data-a="demolegs" data-id="d">Try an example</button></div></div>`
       : `<div class="split"><div class="card"><h2 style="padding-bottom:6px">Each leg on its own</h2><div class="tbl">${legs.map(l => `<div class="tr" style="${cols}"><span class="withjer">${jer(l.code)}<span style="flex:1"><b style="font-weight:600">${l.text}</b><br><span class="sm mu">${l.match} · last 10 games</span>`
@@ -224,28 +224,35 @@ function edgeReport(done) {
 }
 const back = b => b.res === 'Won' ? b.stake * b.odds : b.res === 'Void' ? b.stake : 0;
 const money = v => (v < 0 ? '-£' : '£') + Math.abs(v).toFixed(2);
-function trackerPage() {
+function logBody() {
   const sample = A.bets === null, bets = sample ? SAMPLE_BETS : A.bets, done = bets.filter(b => b.res !== 'Pending');
   const staked = done.reduce((s, b) => s + b.stake, 0), returned = done.reduce((s, b) => s + back(b), 0), pl = returned - staked;
   const by = k => { const m = {}; done.forEach(b => { const x = m[b[k]] ??= { n: 0, pl: 0 }; x.n++; x.pl += back(b) - b.stake; }); return Object.entries(m).sort((a, b) => a[1].pl - b[1].pl); };
   const types = by('type'), books = by('bk'), top = Math.max(1, ...types.map(([, x]) => Math.abs(x.pl)));
   const tile = (l, v, c = '') => `<div class="card tile"><span class="px">${l}</span><b class="mono ${c}">${v}</b></div>`;
   const hc = 'grid-template-columns:90px minmax(0,1fr) 90px 60px 60px 64px 76px';
-  return pageHead('Bet tracker <span class="prem">Premium</span>', 'Log your bets to see your balance at each bookmaker and which kinds of bet cost you money.')
-    + demo(sample ? 'Demo: these are sample bets. Adding your first bet clears them. Bets are saved in this browser only.' : 'Your bets are saved in this browser only.')
+  return demo(sample ? 'Demo: these are sample bets. Adding your first bet clears them. Bets are saved in this browser only.' : 'Your bets are saved in this browser only.')
     + blurred(`<div class="tiles">${tile('Staked', money(staked))}${tile('Returned', money(returned))}${tile('Profit or loss', money(pl), pl < 0 ? 'bad' : 'g')}${tile('Bets settled', done.length)}</div>`
     + edgeReport(done) + `<div class="split"><div class="card" style="gap:10px"><h2>By bet type</h2>${types[0] && types[0][1].pl < 0 ? `<p class="mu">${types[0][0]} bets have cost you the most: ${money(types[0][1].pl)} over ${types[0][1].n} bets.</p>` : ''}`
     + types.map(([t, x]) => `<div style="display:flex;flex-direction:column;gap:4px"><div class="kv"><span>${t} <span class="mu sm">· ${x.n} bets</span></span><b class="mono ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</b></div><div class="bar2"><i style="width:${Math.abs(x.pl) / top * 100}%;background:var(--${x.pl < 0 ? 'bad' : 'g'})"></i></div></div>`).join('') + `</div>`
     + `<div class="card"><h2 style="padding-bottom:6px">Bookmaker balances</h2><div class="tbl"><div class="tr th px" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span>Bookmaker</span><span class="r">Start</span><span class="r">P/L</span><span class="r">Balance</span></div>`
     + books.map(([k, x]) => `<div class="tr mono" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span style="font-family:'IBM Plex Sans'">${esc(k)}</span><span class="r mu">${money(START[k] || 0)}</span><span class="r ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</span><b class="r">${money((START[k] || 0) + x.pl)}</b></div>`).join('') + `</div></div></div>`
     + `<div class="card" style="gap:12px"><h2>Add a bet</h2><div class="form"><label>Date<input id="nb-date" type="date" value="2026-10-11"></label><label>Bookmaker<input id="nb-bk" placeholder="e.g. Bookmaker A"></label>`
-    + `<label>Market<select id="nb-mkt">${[...MARKETS.map(m => m[0]), 'Other'].map(t => `<option>${t}</option>`).join('')}</select></label><label>Type<select id="nb-type">${TYPES.map(t => `<option>${t}</option>`).join('')}</select></label><label>Stake (£)<input id="nb-stake" type="number" min="0" step="0.5" inputmode="decimal"></label>`
+    + `<label>Market<select id="nb-mkt">${[...MARKETS.map(m => m[0]), 'Other'].map(t => `<option>${t}</option>`).join('')}</select></label><label>Type<select id="nb-type">${TYPES.map(t => `<option${A.prefill === t ? ' selected' : ''}>${t}</option>`).join('')}</select></label><label>Stake (£)<input id="nb-stake" type="number" min="0" step="0.5" inputmode="decimal"></label>`
     + `<label>Odds (decimal)<input id="nb-odds" type="number" min="1" step="0.01" inputmode="decimal"></label><label>Result<select id="nb-res">${['Pending', 'Won', 'Lost', 'Void'].map(t => `<option>${t}</option>`).join('')}</select></label>`
     + `<button class="btn" data-a="addbet" data-id="b">Add bet</button></div></div>`
     + `<div class="card"><div class="head" style="padding-bottom:6px"><h2>Your bets</h2>${sample ? `<button data-a="clearbets" data-id="x">Clear sample bets</button>` : bets.length ? '' : `<button data-a="samplebets" data-id="s">Show sample bets</button>`}</div><div class="mxwrap"><div class="tbl" style="min-width:640px">`
     + `<div class="tr th px" style="${hc}"><span>Date</span><span>Bookmaker</span><span>Type</span><span class="r">Stake</span><span class="r">Odds</span><span>Result</span><span class="r">Return</span></div>`
     + (bets.slice(0, 25).map(b => `<div class="tr" style="${hc}"><span class="mono sm">${b.date.slice(5).split('-').reverse().join('/')}</span><span>${esc(b.bk)}</span><span>${esc(b.type)}</span><span class="mono r">${money(b.stake)}</span><span class="mono r">${b.odds ? b.odds.toFixed(2) : '-'}</span>`
       + `<span class="${b.res === 'Won' ? 'g' : b.res === 'Lost' ? 'bad' : 'mu'}">${b.res}</span><span class="mono r">${b.res === 'Pending' ? '-' : money(back(b))}</span></div>`).join('') || `<div class="tr mu">No bets yet.</div>`) + (bets.length > 25 ? `<div class="tr sm mu">Showing the latest 25 of ${bets.length}.</div>` : '') + `</div></div></div>`, 'The bet tracker');
+}
+
+/* Bet tracker: bet check and bet log as two tabs. #/check opens the check tab. */
+function trackerPage() {
+  const tab = A.ttab || (A.slip.length ? 'check' : 'log');
+  return pageHead('Bet tracker <span class="prem">Premium</span>', 'Check a bet builder before you place it, then log it to see your balances, your edge and which kinds of bet cost you money.')
+    + `<div class="pills" data-k="ttab">${[['check', `Bet check${A.slip.length ? ` (${A.slip.length})` : ''}`], ['log', 'Bet log and edge report']].map(([k, l]) => `<button data-a="ttab" data-id="${k}" class="${tab === k ? 'on' : ''}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>`
+    + (tab === 'check' ? checkBody() : logBody());
 }
 
 /* ---------- Offers ---------- */
@@ -283,7 +290,7 @@ function premiumPage() {
     + `<button data-a="plan" data-id="p3" style="align-self:flex-start">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b> (click to see the site as ${isPrem() ? 'a free' : 'a Premium'} member)</button>`
     + `<div class="plans"><div class="card"><h2>Free</h2><div class="price">£0</div><ul>${['Every sheet, every competition', 'Team stats and strongest lines', 'Top 3 players for every stat', 'Referee pages and the returns calculator', 'Weekend email and Telegram channel'].map(li).join('')}</ul><a class="btn btn2" href="#/">Browse fixtures</a></div>`
     + `<div class="card" style="border-color:var(--y);box-shadow:0 0 0 1px var(--y)"><h2>Premium <span class="prem">14-day free trial</span></h2><div class="price">£4.99<span class="mu" style="font-size:15px;font-weight:400"> a month</span></div><div class="sm mu">or £39 a year</div>`
-    + `<ul>${['Every player for every stat, with minutes warnings', 'Games filter: leave out cup ties and freak results', 'Check my bet: landed together and clash warnings', 'Full line finder: form, matchups and stretch lines', 'Line-up and referee alerts', 'Bet tracker and bet-type report'].map(li).join('')}</ul><button class="btn" disabled>Start free trial (coming soon)</button></div></div>`
+    + `<ul>${['Every player for every stat, with minutes warnings', 'Games filter: leave out cup ties and freak results', 'Bet check: landed together and clash warnings', 'Full line finder: form, matchups and stretch lines', 'Line-up and referee alerts', 'Bet tracker and bet-type report'].map(li).join('')}</ul><button class="btn" disabled>Start free trial (coming soon)</button></div></div>`
     + `<div class="card" style="gap:10px;max-width:900px"><h2>Good to know</h2><p><b>Cancel any time.</b> Premium stays on until the end of the period you've paid for.</p>`
     + `<p><b>We don't sell tips.</b> Premium gives you more stats and tools. It doesn't make any bet more likely to win.</p><p><b>Stay in control.</b> If betting stops being fun, see our <a href="#/safer">safer gambling page</a>.</p></div>`;
 }
@@ -298,7 +305,7 @@ function saferPage() {
 }
 
 const morePage = () => pageHead('More', '')
-  + `<div class="card links">${[['challenge', 'Weekly challenge'], ['offers', 'Bookmaker offers'], ['finder', 'Line finder'], ['tracker', 'Bet tracker'], ['calc', 'Bet returns calculator'], ['refs', 'Referees'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
+  + `<div class="card links">${[['challenge', 'Weekly challenge'], ['offers', 'Bookmaker offers'], ['finder', 'Line finder'], ['calc', 'Bet returns calculator'], ['refs', 'Referees'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
   + `<button data-a="theme" data-id="t2" style="align-self:flex-start;display:inline-flex;gap:8px;align-items:center">${ico(isDark() ? 'sun' : 'moon')}${isDark() ? 'Light' : 'Dark'} mode</button>`
   + `<button data-a="plan" data-id="p2" style="align-self:flex-start">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b> (tap to switch)</button>`;
 
@@ -320,6 +327,8 @@ function appAction(a, id, d) {
   else if (a === 'mine') A.mine = !A.mine;
   else if (a === 'enter') { A.entry = A.slip.slice(0, 3); store.set('entry', A.entry); }
   else if (a === 'unenter') { A.entry = null; store.set('entry', null); }
+  else if (a === 'ttab') { A.ttab = id; A.prefill = null; }
+  else if (a === 'logslip') { A.ttab = 'log'; A.prefill = 'Bet builder'; setTimeout(() => document.getElementById('nb-stake')?.focus(), 0); }
   else if (a === 'ropen') A.open[id] = !A.open[id];
   else if (a === 'btsport') { A.bt.sport = id; A.bt.res = null; }
   else if (a === 'btset') { const [path, val] = id.split('|'); btSet(path, val); }
@@ -353,9 +362,11 @@ function appAction(a, id, d) {
   return true;
 }
 
-const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, calc: calcPage, challenge: challengePage, racing: racingPage, race: racePage, tester: testerPage, refs: refsPage, ref: refPage, safer: saferPage, more: morePage };
+const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: trackerPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, calc: calcPage, challenge: challengePage, racing: racingPage, race: racePage, tester: testerPage, refs: refsPage, ref: refPage, safer: saferPage, more: morePage };
 function render() {
   const r = route(), site = document.getElementById('site');
+  if (r.p === 'check' && A.lastRoute !== 'check') A.ttab = 'check';   // old "Check my bet" links open the check tab
+  A.lastRoute = r.p;
   const sx = {}; site.querySelectorAll('.pills[data-k]').forEach(p => sx[p.dataset.k] = p.scrollLeft);
   const fo = { ...(document.activeElement?.dataset || {}) };
   site.innerHTML = topBar(r.p) + `<main class="page" id="main">${(PAGES[r.p] || notFoundPage)(r.id)}${footer()}</main>` + bottomNav(r.p);

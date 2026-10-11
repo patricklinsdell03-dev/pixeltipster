@@ -78,7 +78,7 @@ function challengePage() {
     + `<div class="card" style="gap:10px"><h2>Your entry</h2>`
     + (entry ? `<div class="tbl">${entry.map(legRow).join('')}</div><p class="sm mu">Best possible score: <b class="mono">${best(entry)}</b> points if all 3 land. Scores go up after the last game.</p><button data-a="unenter" data-id="u" style="align-self:flex-start">Change my entry</button>`
       : slip.length < 3 ? `<p class="mu">You have ${slip.length} of 3 legs. Open a sheet, tap a stat and choose "Add to bet check".</p><a class="btn" href="#/" style="align-self:flex-start">Browse fixtures</a>`
-      : `<div class="tbl">${slip.map(legRow).join('')}</div><p class="sm mu">Your first 3 legs from Check my bet. Best possible score: <b class="mono">${best(slip)}</b> points.</p><button class="btn" data-a="enter" data-id="e" style="align-self:flex-start">Enter these 3 legs</button>`)
+      : `<div class="tbl">${slip.map(legRow).join('')}</div><p class="sm mu">Your first 3 legs from your bet check. Best possible score: <b class="mono">${best(slip)}</b> points.</p><button class="btn" data-a="enter" data-id="e" style="align-self:flex-start">Enter these 3 legs</button>`)
     + `</div></div><div class="card"><h2 style="padding-bottom:6px">Last week's leaderboard</h2><div class="tbl">`
     + BOARD.map(([n, code, pts, legs], i) => `<div class="tr" style="grid-template-columns:36px minmax(0,1fr) 80px 70px"><b class="mono ${i < 3 ? 'g' : 'mu'}">${i + 1}</b><span class="withjer">${jer(code)}<b style="font-weight:600">${n}</b></span><span class="sm mu r">${legs}/3 landed</span><b class="mono r">${pts}</b></div>`).join('')
     + `</div></div>`;
