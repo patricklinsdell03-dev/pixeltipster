@@ -13,24 +13,29 @@ const A = {
   alerts: store.get('alerts', { lineups: true, refs: true, trends: false, finder: false, tg: true, email: false }),
   comp: 'All', day: 'All', big: false, mine: false, q: '', fcomp: 'All', fkind: 'all', ftab: 'form', otab: 'signup',
   plan: store.get('plan', 'free'), favs: store.get('favs', []), entry: store.get('entry', null), signed: false, emailErr: false, share: null,
-  calc: { type: 'Lucky 15', n: 5, ew: false, frac: 0.25, stake: '1', sels: [] }
+  calc: { type: 'Lucky 15', n: 5, ew: false, frac: 0.25, stake: '1', sels: [] }, open: {}, systems: store.get('systems', []),
+  bt: { sport: 'football', tried: 0, lastKey: '', res: null,
+    fb: { market: 'Over 2.5 goals', league: 'All', hgf: '', agc: '', tg: '', hc: '', pmin: '', pmax: '', comm: 2 },
+    rc: { market: 'Win', code: 'All', type: 'All', going: 'All', fav: 'Any', flags: { C: false, D: false, G: false, TF: false }, days: 'Any', field: 'Any', bmin: '', bmax: '', comm: 5, marg: 15 } }
 };
 const save = () => { store.set('slip', A.slip); store.set('bets', A.bets); store.set('alerts', A.alerts); };
 
 /* ---------- Shell ---------- */
-const NAV = [['', 'Fixtures', 'cal'], ['finder', 'Line finder', 'search'], ['check', 'Check my bet', 'check'], ['challenge', 'Challenge', 'trophy'], ['tracker', 'Bet tracker', 'chart'], ['offers', 'Offers', 'gift']];
+const NAV = [['', 'Football', 'cal'], ['racing', 'Racing', 'horse'], ['tester', 'Backtester', 'flask'], ['check', 'My bet', 'check'], ['challenge', 'Challenge', 'trophy'], ['offers', 'Offers', 'gift']];
+const NAV_MORE = [['finder', 'Line finder'], ['tracker', 'Bet tracker'], ['calc', 'Returns calculator'], ['refs', 'Referees'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']];
 /* page icon tiles: route -> [icon, colour] */
-const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], calc: ['calc', '#19a974'], challenge: ['trophy', '#e08a00'], refs: ['card', '#1a2233'], ref: ['card', '#1a2233'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
-const BNAV = [['', 'Fixtures', 'cal'], ['finder', 'Finder', 'search'], ['check', 'My bet', 'check'], ['tracker', 'Tracker', 'chart'], ['more', 'More', 'menu']];
-const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', calc: 'Bet returns calculator', challenge: 'Weekly challenge', refs: 'Referees', ref: 'Referee', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
+const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], calc: ['calc', '#19a974'], challenge: ['trophy', '#e08a00'], racing: ['horse', '#8e1f2f'], race: ['horse', '#8e1f2f'], tester: ['flask', '#7b3fe4'], refs: ['card', '#1a2233'], ref: ['card', '#1a2233'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
+const BNAV = [['', 'Football', 'cal'], ['racing', 'Racing', 'horse'], ['tester', 'Tester', 'flask'], ['check', 'My bet', 'check'], ['more', 'More', 'menu']];
+const TITLES = { '': 'Football', racing: 'Racing', race: 'Race', tester: 'Backtester', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', calc: 'Bet returns calculator', challenge: 'Weekly challenge', refs: 'Referees', ref: 'Referee', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
 const route = () => { const [p = '', id] = location.hash.replace(/^#\/?/, '').split('/'); return { p, id }; };
-const navOn = (k, p) => k === p || (k === '' && p === 'match') || (k === 'more' && ['offers', 'alerts', 'premium', 'how', 'safer'].includes(p));
+const navOn = (k, p) => k === p || (k === '' && p === 'match') || (k === 'racing' && p === 'race') || (k === 'more' && ['finder', 'tracker', 'calc', 'refs', 'ref', 'challenge', 'offers', 'alerts', 'premium', 'how', 'safer'].includes(p));
 const cur = (k, p) => navOn(k, p) ? ' class="on" aria-current="page"' : '';
 const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
 const slipCount = () => A.slip.length ? `<span class="count">${A.slip.length}</span>` : '';
 
 const topBar = p => `<header class="site-top"><div class="in"><a class="logo" href="#/" aria-label="Pixeltipster home">${ico('ball')}<b style="font-weight:inherit">PIXEL<span>TIPSTER</span></b></a>`
-  + `<nav class="nav" aria-label="Main">${NAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)}>${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`
+  + `<nav class="nav" aria-label="Main">${NAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)}>${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}`
+  + `<details class="navmore"><summary${NAV_MORE.some(([k]) => k === p || (k === 'refs' && p === 'ref')) ? ' class="on"' : ''}>More</summary><div class="menu">${NAV_MORE.map(([k, l]) => `<a href="#/${k}">${l}</a>`).join('')}</div></details></nav>`
   + `<div class="top-r"><button class="planbtn hide-m" data-a="plan" data-id="p" title="Demo only: see the site as a free or Premium member">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b></button>`
   + `<a class="icon btn btn2" href="#/alerts" aria-label="Alerts">${ico('bell')}</a><button class="icon ghost" data-a="theme" data-id="t" aria-label="Switch to ${isDark() ? 'light' : 'dark'} mode">${ico(isDark() ? 'sun' : 'moon')}</button>`
   + `<a class="btn hide-m" href="#/premium">${ico('star')}Go Premium</a></div></div><div class="pixstrip"></div></header>`;
@@ -293,7 +298,7 @@ function saferPage() {
 }
 
 const morePage = () => pageHead('More', '')
-  + `<div class="card links">${[['challenge', 'Weekly challenge'], ['calc', 'Bet returns calculator'], ['refs', 'Referees'], ['offers', 'Bookmaker offers'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
+  + `<div class="card links">${[['challenge', 'Weekly challenge'], ['offers', 'Bookmaker offers'], ['finder', 'Line finder'], ['tracker', 'Bet tracker'], ['calc', 'Bet returns calculator'], ['refs', 'Referees'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
   + `<button data-a="theme" data-id="t2" style="align-self:flex-start;display:inline-flex;gap:8px;align-items:center">${ico(isDark() ? 'sun' : 'moon')}${isDark() ? 'Light' : 'Dark'} mode</button>`
   + `<button data-a="plan" data-id="p2" style="align-self:flex-start">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b> (tap to switch)</button>`;
 
@@ -315,6 +320,17 @@ function appAction(a, id, d) {
   else if (a === 'mine') A.mine = !A.mine;
   else if (a === 'enter') { A.entry = A.slip.slice(0, 3); store.set('entry', A.entry); }
   else if (a === 'unenter') { A.entry = null; store.set('entry', null); }
+  else if (a === 'ropen') A.open[id] = !A.open[id];
+  else if (a === 'btsport') { A.bt.sport = id; A.bt.res = null; }
+  else if (a === 'btset') { const [path, val] = id.split('|'); btSet(path, val); }
+  else if (a === 'btflag') A.bt.rc.flags[id] = !A.bt.rc.flags[id];
+  else if (a === 'btrun') btRun();
+  else if (a === 'btsave') {
+    const B = A.bt, fb = B.sport === 'football', rules = JSON.parse(JSON.stringify(fb ? B.fb : B.rc));
+    A.systems = [...A.systems, { name: `${fb ? rules.market : rules.code === 'All' ? 'Racing ' + rules.market.toLowerCase() : rules.code + ' ' + rules.market.toLowerCase()} system ${A.systems.length + 1}`, sport: B.sport, rules }];
+    store.set('systems', A.systems);
+  } else if (a === 'btload') { const s = A.systems[+id]; A.bt.sport = s.sport; A.bt[s.sport === 'football' ? 'fb' : 'rc'] = JSON.parse(JSON.stringify(s.rules)); btRun(); }
+  else if (a === 'btdel') { A.systems = A.systems.filter((_, i) => i !== +id); store.set('systems', A.systems); }
   else if (a === 'signup') { const e = v('email').trim(); A.emailErr = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); A.signed = !A.emailErr; }
   else if (a === 'ctype') A.calc.type = id;
   else if (a === 'cn') A.calc.n = Math.min(12, Math.max(2, A.calc.n + +d));
@@ -337,7 +353,7 @@ function appAction(a, id, d) {
   return true;
 }
 
-const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, calc: calcPage, challenge: challengePage, refs: refsPage, ref: refPage, safer: saferPage, more: morePage };
+const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, calc: calcPage, challenge: challengePage, racing: racingPage, race: racePage, tester: testerPage, refs: refsPage, ref: refPage, safer: saferPage, more: morePage };
 function render() {
   const r = route(), site = document.getElementById('site');
   const sx = {}; site.querySelectorAll('.pills[data-k]').forEach(p => sx[p.dataset.k] = p.scrollLeft);
@@ -357,6 +373,7 @@ document.addEventListener('input', e => {   // team search: redraw only the list
   const t = e.target, C = A.calc;
   if (t.id === 'fxq') { A.q = t.value; document.getElementById('fxlist').innerHTML = fixtureList(); }
   if (t.id === 'email' && A.emailErr) { A.emailErr = false; t.removeAttribute('aria-invalid'); }
+  if (t.id.startsWith('bt-')) { btSet(t.id.slice(3), t.value); return; }   // backtester rules: saved as you type, used on Run test
   if (!t.id.startsWith('calc-')) return;   // calculator: update the numbers only, so typing isn't interrupted
   const [, k, i] = t.id.split('-');
   if (k === 'stake') C.stake = t.value; else if (k === 'frac') C.frac = +t.value; else if (k === 'p') C.sels[i].p = t.value; else if (k === 'r') C.sels[i].r = t.value;
