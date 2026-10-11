@@ -61,9 +61,11 @@ const PIX = {
   star: ['....y....', '....y....', '...yyy...', 'yyyyyyyyy', '.yyyyyyy.', '..yyyyy..', '..yy.yy..', '.yy...yy.', '.y.....y.'],
   ball: ['..kkkkk..', '.kwwkwwk.', 'kwwkkkwwk', 'kwwkkkwwk', 'kwwwkwwwk', 'kkwwwwwkk', 'kwwwkwwwk', '.kwkkkwk.', '..kkkkk..'],
   info: ['..#####..', '.#.....#.', '#...#...#', '#.......#', '#...#...#', '#...#...#', '#...#...#', '.#.....#.', '..#####..'],
+  calc: ['#########', '#.......#', '#.#####.#', '#.......#', '#.#.#.#.#', '#.......#', '#.#.#.#.#', '#.......#', '#########'],
+  card: ['yyyyy....', 'yyyyy....', 'yyyyrrrrr', 'yyyyrrrrr', 'yyyyrrrrr', 'yyyyrrrrr', '....rrrrr', '....rrrrr', '.........'],
   shield: ['#########', '#.......#', '#.....#.#', '#....#..#', '#.#.#...#', '#..#....#', '.#.....#.', '..#...#..', '...###...']
 };
-const PIXCOL = { y: '#f5b700', k: '#1a2233', w: '#ffffff' };
+const PIXCOL = { r: '#e5484d', y: '#f5b700', k: '#1a2233', w: '#ffffff' };
 
 /* Grid of characters -> SVG, merging runs of the same colour into one rect. */
 function gridSVG(rows, colour, pad = 0, extra = '') {

@@ -4,7 +4,8 @@
    Fixture status fields the data job must also write:
      updated  ISO time the sheet was built      lineups  true once line-ups are confirmed
      status   'scheduled' | 'postponed'           missing  market groups with no data, e.g. ['Corners']
-     big      chosen for trend notes */
+     big      chosen for trend notes        ref      referee id once appointed, else null
+   Players also carry minutes (10 values, 0 = didn't play) and started (10 values, 1/0). */
 const TODAY = '2026-10-11';   // live: today's date
 const FIXTURES = [
   ['liv-mci', 'Liverpool', 'LIV', 'Man City', 'MCI', 'Premier League', 'Anfield', '2026-10-11', '16:30', 'big lineups'],
@@ -37,21 +38,34 @@ const FIXTURES = [
   status: flags.includes('postponed') ? 'postponed' : 'scheduled', missing: flags.includes('nocorners') ? ['Corners'] : [],
   updated: flags.includes('lineups') ? '2026-10-11T14:20:00Z' : '2026-10-11T07:05:00Z'
 }));
+/* Made-up referees, so no real official gets invented numbers. ref = referee id once appointed, else null. */
+const REFS = [['whitlow', 'Sam Whitlow', 'Premier League'], ['hargreaves', 'Dan Hargreaves', 'Premier League'], ['ortega', 'Luis Ortega', 'LaLiga'],
+  ['bellini', 'Marco Bellini', 'Serie A'], ['keller', 'Jonas Keller', 'Bundesliga'], ['moreau', 'Paul Moreau', 'Ligue 1']].map(([id, name, comp]) => ({ id, name, comp }));
+const REF_FOR = { 'liv-mci': 'whitlow', 'eve-new': 'hargreaves', 'rma-bar': 'ortega', 'int-juv': 'bellini', 'lyo-mon': 'moreau', 'bay-bvb': 'keller' };
+FIXTURES.forEach(f => f.ref = REF_FOR[f.id] || null);
+const REFCACHE = {};
+function refData(id) {
+  if (REFCACHE[id]) return REFCACHE[id];
+  const ref = REFS.find(r => r.id === id), r = rng(hash('ref' + id)), lean = 0.8 + r() * 0.5;
+  const pool = FIXTURES.filter(f => f.comp === ref.comp).flatMap(f => [f.home, f.away]);
+  const games = ten((_, i) => { const a = pool[(i * 3) % pool.length], b = pool[(i * 5 + 1) % pool.length]; return { date: new Date(Date.UTC(2026, 9, 5) - (9 - i) * 7 * 864e5).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }), match: `${a} v ${a === b ? 'Opponent' : b}`, comp: ref.comp }; });
+  return REFCACHE[id] = { ...ref, games, cards: ten(() => pois(r, 4.2 * lean)), fouls: ten(() => pois(r, 22 * (0.85 + r() * 0.3))), reds: ten(() => r() < 0.08 ? 1 : 0), pens: ten(() => r() < 0.25 ? 1 : 0) };
+}
 const fmtDate = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 const FXCACHE = {};
 const fixtureData = id => {
   if (FXCACHE[id]) return FXCACHE[id];
   const f = FIXTURES.find(x => x.id === id) || FIXTURES[0], d = sample(f);
-  Object.assign(d.fixture, { updated: f.updated, lineups: f.lineups, status: f.status, missing: f.missing });
+  Object.assign(d.fixture, { updated: f.updated, lineups: f.lineups, status: f.status, missing: f.missing, ref: f.ref });
   return FXCACHE[id] = d;
 };
 
+const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const rng = seed => () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const pois = (r, m) => { const L = Math.exp(-m); let k = 0, p = 1; do { k++; p *= r(); } while (p > L); return k - 1; };
+const bin = (r, n, p) => { let k = 0; for (let i = 0; i < n; i++) if (r() < p) k++; return k; };
+const ten = fn => Array.from({ length: 10 }, fn);
 function sample(f) {
-  const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
-  const rng = seed => () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  const pois = (r, m) => { const L = Math.exp(-m); let k = 0, p = 1; do { k++; p *= r(); } while (p > L); return k - 1; };
-  const bin = (r, n, p) => { let k = 0; for (let i = 0; i < n; i++) if (r() < p) k++; return k; };
-  const ten = fn => Array.from({ length: 10 }, fn);
   const FIX = {   // hand-set series so the headline players look sensible; Liverpool's 6 is the cup freak result
     'Erling Haaland|sot': [2, 2, 1, 3, 2, 2, 4, 1, 2, 3], 'Hugo Ekitike|sot': [1, 2, 1, 1, 3, 0, 1, 2, 1, 1], 'Florian Wirtz|shots': [3, 1, 2, 4, 2, 0, 3, 2, 1, 2],
     'Ryan Gravenberch|fouls': [2, 3, 1, 2, 2, 0, 3, 2, 1, 2], 'Jeremy Doku|fouled': [3, 4, 3, 1, 5, 3, 2, 3, 2, 4], 'Josko Gvardiol|cards': [0, 1, 0, 0, 1, 0, 0, 1, 1, 0],
@@ -91,7 +105,11 @@ function sample(f) {
       const stats = [p('shots', 'Shots', raw.shots), p('sot', 'Shots on target', raw.sot), p('fouls', 'Fouls committed', raw.fouls), p('fouled', 'Fouls won', raw.fouled), p('tackles', 'Tackles', raw.tackles), st('cards', 'Carded', raw.cards, 'yn'),
         p('goals', 'Goals', g), p('assists', 'Assists', a), p('ga', 'Goal or assist', g.map((x, i) => x + a[i])), p('finv', 'Foul involvements', raw.fouls.map((x, i) => x + raw.fouled[i])), p('f1h', '1st-half fouls', raw.fouls.map(n => bin(pr, n, 0.5))), st('s2h', 'Shot in each half', raw.shots.map(n => n >= 2 && pr() < 0.6 ? 1 : 0), 'yn')];
       stats.forEach(s => s.core = PCORE.includes(s.key));
-      return { name: pn, pos: POS[pos], mins: pos === 'D' ? 86 + Math.floor(pr() * 5) : pos === 'M' ? 76 + Math.floor(pr() * 13) : 68 + Math.floor(pr() * 20), starts: 7 + Math.floor(pr() * 4), stats };
+      const fixed = Object.keys(FIX).some(k => k.startsWith(pn + '|'));
+      const started = ten(() => fixed || pr() < (pos === 'D' ? 0.92 : 0.8) ? 1 : 0);
+      const minutes = started.map(s => s ? Math.min(90, Math.round((pos === 'D' ? 82 : pos === 'M' ? 62 : 55) + pr() * 40)) : pr() < 0.6 ? 1 + Math.floor(pr() * 30) : 0);
+      minutes.forEach((m, i) => { if (!m) stats.forEach(s => { if (!FIX[pn + '|' + s.key]) s.vals[i] = 0; }); });
+      return { name: pn, pos: POS[pos], minutes, started, mins: Math.round(avg(minutes.filter(Boolean))), starts: started.reduce((a, b) => a + b, 0), stats };
     });
     return { name, code, games, groups, players };
   }
@@ -112,10 +130,10 @@ function sample(f) {
       const comps = lg === 'NT' ? ['WCQ', 'WCQ', 'Friendly', 'NL', 'NL', 'Friendly', 'WCQ', 'NL', 'WCQ', 'NL'] : ten((_, i) => [2, 5, 8].includes(i) ? EURO[code] || (UCL.includes(code) ? 'UCL' : 'Cup') : lg);
       return team(name, code, home, [], ten((_, i) => pool[(i * 3 + code.length) % pool.length]), comps);
     };
-    return { fixture: { name: `${f.home} v ${f.away}`, meta, refLine: 'Referee not appointed yet. This updates when they are.' }, teams: [side(f.home, f.hc, true), side(f.away, f.ac, false)], notes: [] };
+    return { fixture: { name: `${f.home} v ${f.away}`, meta }, teams: [side(f.home, f.hc, true), side(f.away, f.ac, false)], notes: [] };
   }
   return {
-    fixture: { name: 'Liverpool v Man City', meta, refLine: 'A. Taylor averages 4.6 cards and 23.1 fouls a game this season.' },
+    fixture: { name: 'Liverpool v Man City', meta },
     teams: [
       team('Liverpool', 'LIV', true, [['Hugo Ekitike', 'F'], ['Florian Wirtz', 'W'], ['Dominik Szoboszlai', 'M'], ['Ryan Gravenberch', 'M'], ['Alexis Mac Allister', 'M'], ['Virgil van Dijk', 'D']],
         ['Bournemouth', 'Newcastle', 'Atletico', 'Burnley', 'Southampton', 'Everton', 'Galatasaray', 'Crystal Palace', 'Chelsea', 'Frankfurt'], ['PL', 'PL', 'UCL', 'PL', 'EFL Cup', 'PL', 'UCL', 'PL', 'PL', 'UCL']),

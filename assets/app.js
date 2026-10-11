@@ -11,16 +11,18 @@ const store = {
 const A = {
   slip: store.get('slip', []), bets: store.get('bets', null),
   alerts: store.get('alerts', { lineups: true, refs: true, trends: false, finder: false, tg: true, email: false }),
-  comp: 'All', day: 'All', big: false, q: '', fcomp: 'All', fkind: 'all', ftab: 'form', otab: 'signup'
+  comp: 'All', day: 'All', big: false, mine: false, q: '', fcomp: 'All', fkind: 'all', ftab: 'form', otab: 'signup',
+  plan: store.get('plan', 'free'), favs: store.get('favs', []), signed: false, emailErr: false, share: null,
+  calc: { type: 'Lucky 15', n: 5, ew: false, frac: 0.25, stake: '1', sels: [] }
 };
 const save = () => { store.set('slip', A.slip); store.set('bets', A.bets); store.set('alerts', A.alerts); };
 
 /* ---------- Shell ---------- */
-const NAV = [['', 'Fixtures', 'cal'], ['finder', 'Line finder', 'search'], ['check', 'Check my bet', 'check'], ['tracker', 'Bet tracker', 'chart'], ['offers', 'Offers', 'gift'], ['alerts', 'Alerts', 'bell']];
+const NAV = [['', 'Fixtures', 'cal'], ['finder', 'Line finder', 'search'], ['check', 'Check my bet', 'check'], ['tracker', 'Bet tracker', 'chart'], ['calc', 'Calculator', 'calc'], ['offers', 'Offers', 'gift']];
 /* page icon tiles: route -> [icon, colour] */
-const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
+const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], calc: ['calc', '#19a974'], refs: ['card', '#1a2233'], ref: ['card', '#1a2233'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
 const BNAV = [['', 'Fixtures', 'cal'], ['finder', 'Finder', 'search'], ['check', 'My bet', 'check'], ['tracker', 'Tracker', 'chart'], ['more', 'More', 'menu']];
-const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
+const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', calc: 'Bet returns calculator', refs: 'Referees', ref: 'Referee', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
 const route = () => { const [p = '', id] = location.hash.replace(/^#\/?/, '').split('/'); return { p, id }; };
 const navOn = (k, p) => k === p || (k === '' && p === 'match') || (k === 'more' && ['offers', 'alerts', 'premium', 'how', 'safer'].includes(p));
 const cur = (k, p) => navOn(k, p) ? ' class="on" aria-current="page"' : '';
@@ -29,7 +31,8 @@ const slipCount = () => A.slip.length ? `<span class="count">${A.slip.length}</s
 
 const topBar = p => `<header class="site-top"><div class="in"><a class="logo" href="#/" aria-label="Pixeltipster home">${ico('ball')}<b style="font-weight:inherit">PIXEL<span>TIPSTER</span></b></a>`
   + `<nav class="nav" aria-label="Main">${NAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)}>${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`
-  + `<div class="top-r"><button class="icon ghost" data-a="theme" data-id="t" aria-label="Switch to ${isDark() ? 'light' : 'dark'} mode">${ico(isDark() ? 'sun' : 'moon')}</button>`
+  + `<div class="top-r"><button class="planbtn hide-m" data-a="plan" data-id="p" title="Demo only: see the site as a free or Premium member">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b></button>`
+  + `<a class="icon btn btn2" href="#/alerts" aria-label="Alerts">${ico('bell')}</a><button class="icon ghost" data-a="theme" data-id="t" aria-label="Switch to ${isDark() ? 'light' : 'dark'} mode">${ico(isDark() ? 'sun' : 'moon')}</button>`
   + `<a class="btn hide-m" href="#/premium">${ico('star')}Go Premium</a></div></div><div class="pixstrip"></div></header>`;
 const bottomNav = p => `<nav class="bnav" aria-label="Main">${BNAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)} style="position:relative">${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`;
 const footer = () => `<footer class="foot"><div><b>18+</b> · Please gamble responsibly · <a href="#/safer">Safer gambling</a> · <a href="#/how">How the numbers work</a> ·<a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a></div>`
@@ -41,12 +44,13 @@ const pill = (k, v, l) => `<button data-a="${k}" data-id="${v}" class="${A[k] ==
 /* ---------- Fixtures ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const dayName = d => { const n = Math.round((new Date(d) - new Date(TODAY)) / 864e5); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : fmtDate(d); };
-const fxBadges = f => (f.status === 'postponed' ? `<span class="badge bad">Postponed</span>` : '') + (f.lineups ? `<span class="badge good">Line-ups in</span>` : '') + (f.big ? `<span class="badge big">${ico('star')}Big game</span>` : '');
+const favBtn = (code, name) => { const on = A.favs.includes(code); return `<button class="fav ${on ? 'faved' : ''}" data-a="fav" data-id="${code}" aria-pressed="${on}">${ico('star')}${on ? 'Following' : 'Follow'} ${name}</button>`; };
+const fxBadges = f => ([f.hc, f.ac].some(c => A.favs.includes(c)) ? `<span class="badge big">${ico('star')}Your team</span>` : '') + (f.status === 'postponed' ? `<span class="badge bad">Postponed</span>` : '') + (f.lineups ? `<span class="badge good">Line-ups in</span>` : '') + (f.big ? `<span class="badge big">${ico('star')}Big game</span>` : '');
 const fxRow = f => `<a class="fxrow" href="#/match/${f.id}"><span class="mono fxko">${f.ko}</span><span class="fxteams"><span class="fxteam">${jer(f.hc)}<b>${f.home}</b></span><span class="fxteam">${jer(f.ac)}<b>${f.away}</b></span></span><span class="fxb">${fxBadges(f)}</span>${ico('arrow')}</a>`;
 function fixtureList() {
   const q = A.q.trim().toLowerCase();
-  const list = FIXTURES.filter(f => (A.comp === 'All' || f.comp === A.comp) && (A.day === 'All' || f.date === A.day) && (!A.big || f.big) && (!q || (f.home + ' ' + f.away).toLowerCase().includes(q))).sort((a, b) => a.ko.localeCompare(b.ko));
-  if (!list.length) return `<div class="card mu">No fixtures match. Try another day, competition or team.</div>`;
+  const list = FIXTURES.filter(f => (A.comp === 'All' || f.comp === A.comp) && (A.day === 'All' || f.date === A.day) && (!A.big || f.big) && (!A.mine || [f.hc, f.ac].some(c => A.favs.includes(c))) && (!q || (f.home + ' ' + f.away).toLowerCase().includes(q))).sort((a, b) => a.ko.localeCompare(b.ko));
+  if (!list.length) return `<div class="card mu">${A.mine && !A.favs.length ? 'Follow teams from any sheet and their games show up here.' : 'No fixtures match. Try another day, competition or team.'}</div>`;
   return [...new Set(list.map(f => f.date))].map(d => `<section class="fxday"><h2>${dayName(d)}${dayName(d) !== fmtDate(d) ? ` <span class="mu" style="font-weight:400">${fmtDate(d)}</span>` : ''}</h2>`
     + [...new Set(list.filter(f => f.date === d).map(f => f.comp))].map(c => `<div class="card fxcomp"><div class="px">${compDot(c)}${c}</div>`
       + list.filter(f => f.date === d && f.comp === c).map(fxRow).join('') + `</div>`).join('') + `</section>`).join('');
@@ -55,17 +59,18 @@ function fixturesPage() {
   const comps = ['All', ...new Set(FIXTURES.map(f => f.comp))], days = ['All', ...new Set(FIXTURES.map(f => f.date))];
   return `<section class="card hero"><div><div class="kits" aria-hidden="true">${Object.keys(KITS).map(k => jer(k)).join('')}</div><h1>Stat sheets for every bet builder</h1><p class="mu">Hit rates from each team's and player's recent games, grouped the way bookmakers group their bet builder markets. Facts about past games, never tips.</p>`
     + `<div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap"><a class="btn" href="#/match/liv-mci">See an example sheet</a><a class="btn btn2" href="#/how">How the numbers work</a></div></div>`
-    + `<ul class="trust">${['Every number links to the games behind it', 'Leave out cup games or freak results', 'No odds, no tips, no predictions', '3 free sheets a week, no card needed'].map(t => `<li>${ico('tick')}${t}</li>`).join('')}</ul></section>`
-    + demo('Demo: fixtures and numbers are sample data until the live feed is connected.')
+    + `<ul class="trust">${['Every number links to the games behind it', 'Leave out cup games or freak results', 'No odds, no tips, no predictions', 'Every sheet free to open, no card needed'].map(t => `<li>${ico('tick')}${t}</li>`).join('')}</ul></section>`
+    + demo('Demo: fixtures and numbers are sample data until the live feed is connected.') + signupCard()
     + `<div class="card fxfilters"><div class="fxsearch"><input id="fxq" type="search" placeholder="Search for a team" value="${esc(A.q)}" aria-label="Search fixtures by team" autocomplete="off">`
-    + `<button data-a="big" data-id="b" class="${A.big ? 'on' : ''}" aria-pressed="${A.big}">${ico('star')}Big games</button></div>`
+    + `<button data-a="big" data-id="b" class="${A.big ? 'on' : ''}" aria-pressed="${A.big}">${ico('star')}Big games</button><button data-a="mine" data-id="m" class="${A.mine ? 'on' : ''}" aria-pressed="${A.mine}">My teams${A.favs.length ? ` (${A.favs.length})` : ''}</button></div>`
     + `<div class="pills" data-k="fxday">${days.map(d => `<button data-a="fxday" data-id="${d}" class="${A.day === d ? 'on' : ''}" aria-pressed="${A.day === d}">${d === 'All' ? 'All days' : dayName(d)}</button>`).join('')}</div>`
     + `<div class="pills" data-k="fxcomp">${comps.map(c => `<button data-a="fxcomp" data-id="${c}" class="${A.comp === c ? 'on' : ''}" aria-pressed="${A.comp === c}">${c === 'All' ? 'All competitions' : compDot(c) + c}</button>`).join('')}</div></div>`
     + `<div id="fxlist">${fixtureList()}</div>`;
 }
 
 function matchPage(id) {
-  openFixture(FIXTURES.some(f => f.id === id) ? id : FIXTURES[0].id);
+  if (!FIXTURES.some(f => f.id === id)) return notFoundPage();
+  openFixture(id);
   return sheetHTML();
 }
 
@@ -117,7 +122,7 @@ function finderPage() {
     + `<div class="card" style="gap:12px"><p>${explain}</p><div class="pills" data-k="fcomp">${comps.map(c => pill('fcomp', c, c === 'All' ? 'All competitions' : compDot(c) + c)).join('')}</div>`
     + (tab === 'match' ? '' : `<div class="pills">${[['all', 'Teams and players'], ['team', 'Teams'], ['player', 'Players']].map(([v, l]) => pill('fkind', v, l)).join('')}</div>`) + `</div>`
     + `<div class="card"><div class="tbl"><div class="tr th px" style="grid-template-columns:minmax(0,1fr) auto"><span>${list.length} found</span><span class="r">${head[0]} → ${head[1]}</span></div>`
-    + (rows.slice(0, 50).join('') || `<div class="tr mu">Nothing matches these filters.</div>`)
+    + ((isPrem() ? rows.slice(0, 50).join('') : rows.slice(0, FREE_FINDER).join('') + blurred(rows.slice(FREE_FINDER, 12).join(''), 'The full line finder')) ||`<div class="tr mu">Nothing matches these filters.</div>`)
     + (rows.length > 50 ? `<div class="tr sm mu">Showing the top 50. Pick a competition to narrow the list.</div>` : '') + `</div></div>`;
 }
 
@@ -157,8 +162,10 @@ function checkPage() {
   legs.forEach(l => (groups[l.fx + '|' + l.ti] ??= []).push(l));
   const clashes = legs.filter(l => l.st.key === 'cs' && legs.some(m => m.fx === l.fx && (m.st.key === 'btts' || (m.ti === l.ti && m.st.key === 'conceded') || (m.ti !== l.ti && m.st.key === 'goals'))))
     .map(l => `"${l.text}" can't land in the same game as a leg that needs ${l.team}'s opponents to score.`);
+  A.together = [];
   const together = Object.values(groups).filter(g => g.length > 1).map(g => {
     const n = [...Array(10).keys()].filter(i => g.every(l => l.r.f(l.st.vals[i]))).length;
+    A.together.push(`All ${g.length} ${g[0].team} legs landed together in ${n} of their last 10 games`);
     return `<div class="box" style="display:flex;flex-direction:column;gap:6px"><span>All ${g.length} ${g[0].team} legs landed together in <b class="mono">${n}/10</b> of their last 10 games.</span><span class="meter"><i style="width:${n * 10}%;background:var(--g);opacity:1"></i></span></div>`;
   });
   const cols = 'grid-template-columns:minmax(0,1fr) 56px 44px';
@@ -168,8 +175,12 @@ function checkPage() {
       : `<div class="split"><div class="card"><h2 style="padding-bottom:6px">Each leg on its own</h2><div class="tbl">${legs.map(l => `<div class="tr" style="${cols}"><span class="withjer">${jer(l.code)}<span style="flex:1"><b style="font-weight:600">${l.text}</b><br><span class="sm mu">${l.match} · last 10 games</span>`
         + `<span class="meter ${l.r.hot ? 'hot' : ''}" style="margin-top:6px;display:block"><i style="width:${l.r.pct}%"></i></span></span></span><b class="mono r ${l.r.hot ? 'g' : ''}">${l.r.n}/${l.r.N}</b><button class="icon ghost" data-a="rmleg" data-id="${l.spec}" aria-label="Remove this leg">×</button></div>`).join('')}</div></div>`
         + `<div style="display:flex;flex-direction:column;gap:20px">${clashes.length ? `<div class="card" style="gap:8px;border-color:var(--bad)"><h2 class="bad">Clash found</h2>${clashes.map(c => `<p>${c}</p>`).join('')}</div>` : ''}`
-        + `<div class="card" style="gap:10px"><h2>Landed together</h2>${together.join('') || `<p class="mu">Add two or more legs on the same team to see how often they landed in the same game.</p>`}`
-        + `<p class="sm mu">Legs on different teams can't be combined this way, because each team's last 10 games are different matches.</p></div></div></div>`);
+        + blurred(`<div class="card" style="gap:10px"><h2>Landed together</h2>${together.join('') || `<p class="mu">Add two or more legs on the same team to see how often they landed in the same game.</p>`}`
+        + `<p class="sm mu">Legs on different teams can't be combined this way, because each team's last 10 games are different matches.</p></div>`, 'Landed together') + `</div></div>`
+        + `<div class="card share" style="gap:12px"><h2>Share it</h2><p class="mu">Make a picture of this check for WhatsApp, Telegram or X.</p>`
+        + (A.share ? `<img src="${A.share}" alt="Picture of your bet check with each leg's hit rate"><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="${A.share}" download="pixeltipster-bet.png">Download picture</a>`
+          + (navigator.canShare ? `<button data-a="sharefile" data-id="s">Share</button>` : '') + `</div>` : `<button class="btn" data-a="share" data-id="s" style="align-self:flex-start">Make picture</button>`) + `</div>`
+        + buildCard());
 }
 
 /* ---------- Bet tracker ---------- */
@@ -192,7 +203,7 @@ function trackerPage() {
   const hc = 'grid-template-columns:90px minmax(0,1fr) 90px 60px 60px 64px 76px';
   return pageHead('Bet tracker <span class="prem">Premium</span>', 'Log your bets to see your balance at each bookmaker and which kinds of bet cost you money.')
     + demo(sample ? 'Demo: these are sample bets. Adding your first bet clears them. Bets are saved in this browser only.' : 'Your bets are saved in this browser only.')
-    + `<div class="tiles">${tile('Staked', money(staked))}${tile('Returned', money(returned))}${tile('Profit or loss', money(pl), pl < 0 ? 'bad' : 'g')}${tile('Bets settled', done.length)}</div>`
+    + blurred(`<div class="tiles">${tile('Staked', money(staked))}${tile('Returned', money(returned))}${tile('Profit or loss', money(pl), pl < 0 ? 'bad' : 'g')}${tile('Bets settled', done.length)}</div>`
     + `<div class="split"><div class="card" style="gap:10px"><h2>By bet type</h2>${types[0] && types[0][1].pl < 0 ? `<p class="mu">${types[0][0]} bets have cost you the most: ${money(types[0][1].pl)} over ${types[0][1].n} bets.</p>` : ''}`
     + types.map(([t, x]) => `<div style="display:flex;flex-direction:column;gap:4px"><div class="kv"><span>${t} <span class="mu sm">· ${x.n} bets</span></span><b class="mono ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</b></div><div class="bar2"><i style="width:${Math.abs(x.pl) / top * 100}%;background:var(--${x.pl < 0 ? 'bad' : 'g'})"></i></div></div>`).join('') + `</div>`
     + `<div class="card"><h2 style="padding-bottom:6px">Bookmaker balances</h2><div class="tbl"><div class="tr th px" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span>Bookmaker</span><span class="r">Start</span><span class="r">P/L</span><span class="r">Balance</span></div>`
@@ -204,7 +215,7 @@ function trackerPage() {
     + `<div class="card"><div class="head" style="padding-bottom:6px"><h2>Your bets</h2>${sample ? `<button data-a="clearbets" data-id="x">Clear sample bets</button>` : bets.length ? '' : `<button data-a="samplebets" data-id="s">Show sample bets</button>`}</div><div class="mxwrap"><div class="tbl" style="min-width:640px">`
     + `<div class="tr th px" style="${hc}"><span>Date</span><span>Bookmaker</span><span>Type</span><span class="r">Stake</span><span class="r">Odds</span><span>Result</span><span class="r">Return</span></div>`
     + (bets.map(b => `<div class="tr" style="${hc}"><span class="mono sm">${b.date.slice(5).split('-').reverse().join('/')}</span><span>${esc(b.bk)}</span><span>${esc(b.type)}</span><span class="mono r">${money(b.stake)}</span><span class="mono r">${b.odds ? b.odds.toFixed(2) : '-'}</span>`
-      + `<span class="${b.res === 'Won' ? 'g' : b.res === 'Lost' ? 'bad' : 'mu'}">${b.res}</span><span class="mono r">${b.res === 'Pending' ? '-' : money(back(b))}</span></div>`).join('') || `<div class="tr mu">No bets yet.</div>`) + `</div></div></div>`;
+      + `<span class="${b.res === 'Won' ? 'g' : b.res === 'Lost' ? 'bad' : 'mu'}">${b.res}</span><span class="mono r">${b.res === 'Pending' ? '-' : money(back(b))}</span></div>`).join('') || `<div class="tr mu">No bets yet.</div>`) + `</div></div></div>`, 'The bet tracker');
 }
 
 /* ---------- Offers ---------- */
@@ -239,9 +250,10 @@ function premiumPage() {
   const li = t => `<li>${ico('tick')}<span>${t}</span></li>`;
   return pageHead('Free and Premium', 'Start free. Upgrade if the extra tools are worth it to you.')
     + demo('Demo: prices are provisional and sign-up is not open yet.')
-    + `<div class="plans"><div class="card"><h2>Free</h2><div class="price">£0</div><ul>${['3 full sheets a week', 'Strongest lines on every sheet', 'Games filter and line controls', 'Free Telegram channel'].map(li).join('')}</ul><a class="btn btn2" href="#/">Browse fixtures</a></div>`
+    + `<button data-a="plan" data-id="p3" style="align-self:flex-start">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b> (click to see the site as ${isPrem() ? 'a free' : 'a Premium'} member)</button>`
+    + `<div class="plans"><div class="card"><h2>Free</h2><div class="price">£0</div><ul>${['Every sheet, every competition', 'Team stats and strongest lines', 'Top 3 players for every stat', 'Referee pages and the returns calculator', 'Weekend email and Telegram channel'].map(li).join('')}</ul><a class="btn btn2" href="#/">Browse fixtures</a></div>`
     + `<div class="card" style="border-color:var(--y);box-shadow:0 0 0 1px var(--y)"><h2>Premium <span class="prem">14-day free trial</span></h2><div class="price">£4.99<span class="mu" style="font-size:15px;font-weight:400"> a month</span></div><div class="sm mu">or £39 a year</div>`
-    + `<ul>${['Every sheet in every competition', 'Line finder across all games', 'Check my bet, with clash warnings', 'Line-up and referee alerts', 'Bet tracker and bet-type report'].map(li).join('')}</ul><button class="btn" disabled>Start free trial (coming soon)</button></div></div>`
+    + `<ul>${['Every player for every stat, with minutes warnings', 'Games filter: leave out cup ties and freak results', 'Check my bet: landed together and clash warnings', 'Full line finder: form, matchups and stretch lines', 'Line-up and referee alerts', 'Bet tracker and bet-type report'].map(li).join('')}</ul><button class="btn" disabled>Start free trial (coming soon)</button></div></div>`
     + `<div class="card" style="gap:10px;max-width:900px"><h2>Good to know</h2><p><b>Cancel any time.</b> Premium stays on until the end of the period you've paid for.</p>`
     + `<p><b>We don't sell tips.</b> Premium gives you more stats and tools. It doesn't make any bet more likely to win.</p><p><b>Stay in control.</b> If betting stops being fun, see our <a href="#/safer">safer gambling page</a>.</p></div>`;
 }
@@ -256,19 +268,32 @@ function saferPage() {
 }
 
 const morePage = () => pageHead('More', '')
-  + `<div class="card links">${[['offers', 'Bookmaker offers'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
-  + `<button data-a="theme" data-id="t2" style="align-self:flex-start;display:inline-flex;gap:8px;align-items:center">${ico(isDark() ? 'sun' : 'moon')}${isDark() ? 'Light' : 'Dark'} mode</button>`;
+  + `<div class="card links">${[['calc', 'Bet returns calculator'], ['refs', 'Referees'], ['offers', 'Bookmaker offers'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
+  + `<button data-a="theme" data-id="t2" style="align-self:flex-start;display:inline-flex;gap:8px;align-items:center">${ico(isDark() ? 'sun' : 'moon')}${isDark() ? 'Light' : 'Dark'} mode</button>`
+  + `<button data-a="plan" data-id="p2" style="align-self:flex-start">Demo view: <b>${isPrem() ? 'Premium' : 'Free'}</b> (tap to switch)</button>`;
+
+const notFoundPage = () => pageHead('Page not found', "That page doesn't exist, or the sheet isn't ready yet. Sheets go up a few days before each game.")
+  + `<a class="btn" href="#/" style="align-self:flex-start">Back to fixtures</a>`;
 
 /* ---------- Actions and rendering ---------- */
-function appAction(a, id) {
+function appAction(a, id, d) {
   const v = k => document.getElementById(k).value;
   if (a === 'fxcomp') A.comp = id;
   else if (a === 'fxday') A.day = id;
   else if (a === 'big') A.big = !A.big;
   else if (a === 'fcomp' || a === 'fkind' || a === 'ftab' || a === 'otab') A[a] = id;
-  else if (a === 'addleg') A.slip = A.slip.includes(id) ? A.slip.filter(s => s !== id) : [...A.slip, id];
-  else if (a === 'rmleg') A.slip = A.slip.filter(s => s !== id);
-  else if (a === 'clearslip') A.slip = [];
+  else if (a === 'addleg') { A.slip = A.slip.includes(id) ? A.slip.filter(s => s !== id) : [...A.slip, id]; A.share = null; }
+  else if (a === 'rmleg') { A.slip = A.slip.filter(s => s !== id); A.share = null; }
+  else if (a === 'clearslip') { A.slip = []; A.share = null; }
+  else if (a === 'plan') { A.plan = isPrem() ? 'free' : 'premium'; store.set('plan', A.plan); }
+  else if (a === 'fav') { A.favs = A.favs.includes(id) ? A.favs.filter(c => c !== id) : [...A.favs, id]; store.set('favs', A.favs); }
+  else if (a === 'mine') A.mine = !A.mine;
+  else if (a === 'signup') { const e = v('email').trim(); A.emailErr = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); A.signed = !A.emailErr; }
+  else if (a === 'ctype') A.calc.type = id;
+  else if (a === 'cn') A.calc.n = Math.min(12, Math.max(2, A.calc.n + +d));
+  else if (a === 'cew') { A.calc.ew = !A.calc.ew; A.calc.sels.forEach(s => { if (!A.calc.ew && s.r === 'Placed') s.r = 'Lost'; }); }
+  else if (a === 'share') { shareImage(A.slip.map(legInfo), isPrem() ? A.together : []).then(b => { A.shareBlob = b; A.share = URL.createObjectURL(b); render(); }); return false; }
+  else if (a === 'sharefile') { navigator.share({ files: [new File([A.shareBlob], 'pixeltipster-bet.png', { type: 'image/png' })], title: 'My bet builder check' }).catch(() => {}); return false; }
   else if (a === 'demolegs') A.slip = ['liv-mci|t|0|0|0|1.5', 'liv-mci|t|3|0|0|4.5', 'liv-mci|p|1|0|sot|1'];
   else if (a === 'alert') A.alerts[id] = !A.alerts[id];
   else if (a === 'clearbets') A.bets = [];
@@ -285,12 +310,12 @@ function appAction(a, id) {
   return true;
 }
 
-const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, safer: saferPage, more: morePage };
+const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, calc: calcPage, refs: refsPage, ref: refPage, safer: saferPage, more: morePage };
 function render() {
   const r = route(), site = document.getElementById('site');
   const sx = {}; site.querySelectorAll('.pills[data-k]').forEach(p => sx[p.dataset.k] = p.scrollLeft);
   const fo = { ...(document.activeElement?.dataset || {}) };
-  site.innerHTML = topBar(r.p) + `<main class="page" id="main">${(PAGES[r.p] || fixturesPage)(r.id)}${footer()}</main>` + bottomNav(r.p);
+  site.innerHTML = topBar(r.p) + `<main class="page" id="main">${(PAGES[r.p] || notFoundPage)(r.id)}${footer()}</main>` + bottomNav(r.p);
   document.title = (r.p === 'match' ? DATA.fixture.name : TITLES[r.p] || 'Fixtures') + ' · Pixeltipster';
   site.querySelectorAll('.pills[data-k]').forEach(p => p.scrollLeft = sx[p.dataset.k] || 0);
   if (fo.a) site.querySelector(`[data-a="${fo.a}"][data-id="${fo.id}"]${fo.d ? `[data-d="${fo.d}"]` : ''}`)?.focus({ preventScroll: true });
@@ -299,10 +324,16 @@ function render() {
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-a]'); if (!b) return;
   const { a, id, d } = b.dataset;
-  if (sheetAction(a, id, d) || appAction(a, id)) render();
+  if (sheetAction(a, id, d) || appAction(a, id, d)) render();
 });
 document.addEventListener('input', e => {   // team search: redraw only the list so the box keeps focus
-  if (e.target.id === 'fxq') { A.q = e.target.value; document.getElementById('fxlist').innerHTML = fixtureList(); }
+  const t = e.target, C = A.calc;
+  if (t.id === 'fxq') { A.q = t.value; document.getElementById('fxlist').innerHTML = fixtureList(); }
+  if (t.id === 'email' && A.emailErr) { A.emailErr = false; t.removeAttribute('aria-invalid'); }
+  if (!t.id.startsWith('calc-')) return;   // calculator: update the numbers only, so typing isn't interrupted
+  const [, k, i] = t.id.split('-');
+  if (k === 'stake') C.stake = t.value; else if (k === 'frac') C.frac = +t.value; else if (k === 'p') C.sels[i].p = t.value; else if (k === 'r') C.sels[i].r = t.value;
+  document.getElementById('calcout').innerHTML = calcOut();
 });
 addEventListener('hashchange', () => { render(); scrollTo(0, 0); });
 W.addEventListener('change', render); WM.addEventListener('change', render);

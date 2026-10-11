@@ -49,6 +49,23 @@ function rate(st, ti, line) {
 
 /* ---------- rendering ---------- */
 const chev = open => `<svg class="tw ${open ? '' : 'cl'}" viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="2,5 7,10 12,5"/></svg>`;
+const lockRows = (rows, what) => isPrem() ? rows.join('') : rows.slice(0, FREE_PLAYERS).join('') + blurred(rows.slice(FREE_PLAYERS).join(''), what);
+/* Minutes risk: few starts, or often off early, caps what a player can rack up. */
+function minRisk(p) {
+  if (!p.minutes) return '';
+  const early = p.minutes.filter((m, i) => p.started[i] && m < 70).length;
+  return p.starts <= 6 ? `Started ${p.starts} of the last 10` : early >= 4 ? `Off before 70 minutes in ${early} of ${p.starts} starts` : '';
+}
+const riskBadge = p => minRisk(p) ? ` <span class="badge warn" title="${minRisk(p)}">Minutes risk</span>` : '';
+const minutesBlock = p => !p.minutes ? '' : `<div style="display:flex;flex-direction:column;gap:6px"><div class="sm mu">Minutes played, last 10 games${minRisk(p) ? ` · <b class="warn">${minRisk(p)}</b>` : ''}</div>`
+  + `<div class="chips mono">${p.minutes.map((m, i) => `<i class="${!m ? 'x' : p.started[i] && m < 70 ? 'w' : ''}" title="${p.started[i] ? 'Started' : m ? 'Came on' : "Didn't play"}">${m || '-'}</i>`).join('')}</div>`
+  + `<div class="sm mu">${p.mins} minutes a game when playing · started ${p.starts} of the last 10</div></div>`;
+function refCard() {
+  const id = DATA.fixture.ref, r = id && refData(id);
+  if (!r) return `<div class="card" style="gap:6px"><h2>Referee</h2><p class="mu">Not appointed yet. This updates when they are.</p></div>`;
+  return `<div class="card" style="gap:6px"><h2>Referee</h2><a class="withjer" href="#/ref/${r.id}" style="font-weight:600">${ico('card')}${r.name}</a>`
+    + `<p class="sm">${avg(r.cards).toFixed(1)} cards and ${avg(r.fouls).toFixed(0)} fouls a game in their last 10. Match cards went over 4.5 in ${r.cards.filter(v => v > 4.5).length} of them.</p><a class="sm" href="#/ref/${r.id}">Full referee stats →</a></div>`;
+}
 const meter = pct => `<span class="meter"><i style="width:${pct}%"></i></span>`;
 const stepper = (id, st, line) => `<span class="step"><button data-a="line" data-id="${id}" data-d="-1" aria-label="Lower the line">-</button><span>${lineShort(st, line)}</span><button data-a="line" data-id="${id}" data-d="1" aria-label="Raise the line">+</button></span>`;
 
@@ -100,7 +117,7 @@ function marketTab(name) {
   const hidden = stats.filter(s => !s.core).length;
   return `<div class="card mcard" style="padding-top:4px">${W.matches ? `<h2 style="padding-top:10px">${name}</h2>` +`<div class="wrow whd px mu"><span>Stat</span>${T.map(t => `<span class="wt"><span class="withjer">${jer(t.code, 's')}${t.name}</span><span class="r">Avg</span><span class="r">L5</span><span class="r">Hits</span></span>`).join('')}</div>` : ''}${stats.map((st, si) => more || st.core ? teamRow(gi, si) : '').join('')}`
     + (hidden ? `<button data-a="more" data-id="${name}" style="margin-top:8px;font-weight:600;font-size:14px">${more ? 'Show fewer' : `Show ${hidden} more`}</button>` : '') + `</div>`
-    + (name === 'Cards' && !W.matches ? `<div class="card"><h2>Referee</h2><div>${DATA.fixture.refLine}</div></div>` : '');
+    + (name === 'Cards' && !W.matches ? refCard() : '');
 }
 
 /* Players: pick a stat, every player ranked at one shared line. */
@@ -115,12 +132,12 @@ function playersMatrix() {
   return `<div class="card"><div class="kv" style="align-items:center;padding-bottom:6px"><span class="sm mu">Click a stat heading to sort by it. Use - and + to set that stat's line for every player. Click a player for game-by-game numbers.</span>`
     + `<button data-a="more" data-id="players" style="flex:none;font-size:14px;font-weight:600">${S.more.players ? 'Main stats only' : 'All stats'}</button></div><div class="mxwrap">`
     + `<div class="mx hd" ${cols}><span class="px mu">Player</span><span class="px mu">Team</span><span class="px mu r">Mins</span>${keys.map(s => `<span style="display:flex;flex-direction:column;gap:4px;align-items:center"><button class="sorter sm ${s.key === sk ? 'on' : ''}" data-a="pstat" data-id="${s.key}" aria-pressed="${s.key === sk}">${s.label}</button>${isCount(s) ? stepper('p.' + s.key, s, lines[s.key]) : '<span class="sm mu">Yes</span>'}</span>`).join('')}</div>`
-    + all.map(r => {
+    + lockRows(all.map(r => {
       const rid = `x${r.ti}.${r.pi}`, open = !!S.open[rid], st = of(r, sk);
-      return `<div class="row"><button class="rh mx" ${cols} data-a="open" data-id="${rid}" aria-expanded="${open}"><span class="lab">${chev(open)}${r.p.name}</span><span class="sm mu withjer">${jer(T[r.ti].code, 's')}${T[r.ti].code} · ${r.p.pos}</span><span class="mono r mu">${r.p.mins}</span>`
+      return `<div class="row"><button class="rh mx" ${cols} data-a="open" data-id="${rid}" aria-expanded="${open}"><span class="lab">${chev(open)}${r.p.name}${riskBadge(r.p)}</span><span class="sm mu withjer">${jer(T[r.ti].code, 's')}${T[r.ti].code} · ${r.p.pos}</span><span class="mono r mu">${r.p.mins}</span>`
         + keys.map(s => { const c = r.c[s.key]; return `<span class="hc mono ${c.hot ? 'hot' : ''}" style="${c.hot ? '' : `background:rgba(var(--g-rgb),${(c.pct / 330).toFixed(2)})`}"><b>${c.n}/${c.N}</b></span>`; }).join('') + `</button>`
-        + (open ? `<div class="det fade" style="padding-left:20px">${LEGEND}<b>${st.label}, ${lineShort(st, lines[sk])}</b>${detail(rid, st, r.ti, null, lines[sk], `p|${r.ti}|${r.pi}|${sk}`)}</div>` : '') + `</div>`;
-    }).join('') + `</div></div>`;
+        + (open ? `<div class="det fade" style="padding-left:20px">${LEGEND}<b>${st.label}, ${lineShort(st, lines[sk])}</b>${detail(rid, st, r.ti, null, lines[sk], `p|${r.ti}|${r.pi}|${sk}`)}${minutesBlock(r.p)}</div>` : '') + `</div>`;
+    }), 'Every player') + `</div></div>`;
 }
 
 function playersTab() {
@@ -134,13 +151,13 @@ function playersTab() {
   return `<div class="pills" data-k="pstat">${T[0].players[0].stats.map(s => `<button data-a="pstat" data-id="${s.key}" class="${s.key === key ? 'on' : ''}">${s.label}</button>`).join('')}</div>`
     + `<div class="card" style="padding-top:4px"><div class="kv" style="align-items:center;padding:8px 0"><span>${count ? 'Line for every player' : 'Counts as a hit if it happened'}</span>${count ? stepper(id, st0, line) : ''}</div>`
     + (W.matches ? `<div class="prow whd px mu"><span>Player</span><span>Team</span><span class="r">Avg</span><span class="r">L5</span><span>Hits</span><span class="r">Mins</span></div>` : '')
-    + rows.map(r => {
-      const rid = `p${r.ti}.${r.pi}.${key}`, open = !!S.open[rid], tag = `${jer(T[r.ti].code, 's')} ${T[r.ti].code} · ${r.p.pos}`;
+    + lockRows(rows.map(r => {
+      const rid = `p${r.ti}.${r.pi}.${key}`, open = !!S.open[rid], tag = `${jer(T[r.ti].code, 's')} ${T[r.ti].code} · ${r.p.pos}${riskBadge(r.p)}`;
       return `<div class="row"><button class="rh ${W.matches ? 'prow' : ''} ${r.c.hot ? 'hot' : ''}" data-a="open" data-id="${rid}" aria-expanded="${open}">` + (W.matches
           ? `<span class="lab">${chev(open)}${r.p.name}</span><span class="sm mu">${tag}</span><span class="mono r">${count ? r.a.toFixed(1) : '-'}</span><span class="mono r">${r.c.n5}/${r.c.N5}</span><span class="hits"><b class="mono">${r.c.n}/${r.c.N}</b>${meter(r.c.pct)}</span><span class="mono r mu">${r.p.mins}</span>`
           : `<span class="lab">${chev(open)}<span style="flex:1">${r.p.name} <span class="mu sm" style="font-weight:400">${tag}</span></span><b class="mono">${r.c.n}/${r.c.N}</b></span>${meter(r.c.pct)}`) + `</button>`
-        + (open ? `<div class="det fade">${LEGEND}${detail(rid, r.st, r.ti, null, line, `p|${r.ti}|${r.pi}|${key}`)}<div class="sm mu">${r.p.mins} minutes a game · started ${r.p.starts} of the last 10</div></div>` : '') + `</div>`;
-    }).join('') + `</div>`;
+        + (open ? `<div class="det fade">${LEGEND}${detail(rid, r.st, r.ti, null, line, `p|${r.ti}|${r.pi}|${key}`)}${minutesBlock(r.p)}</div>` : '') + `</div>`;
+    }), 'Every player') + `</div>`;
 }
 
 const notesTab = () => `<div class="mu">Recent changes in roles, shape and partnerships that the 10-game numbers can hide.</div><div class="notes">`
@@ -149,7 +166,8 @@ const notesTab = () => `<div class="mu">Recent changes in roles, shape and partn
 
 /* Games filter: leave out a competition or single games from every hit rate. */
 const gamesBtn = () => `<button data-a="filt" data-id="f" aria-expanded="${S.filt}" style="display:flex;justify-content:space-between;align-items:center;font-size:14px"><span>Games used: <b class="mono">${sel(0).length + sel(1).length}/20</b>${Object.values(S.off).some(Boolean) || Object.values(S.comp).some(Boolean) ? ' · filtered' : ' · all'}</span>${chev(S.filt)}</button>`;
-function gamesPanel() {
+const gamesPanel = () => blurred(gamesPanelHTML(), 'The games filter');
+function gamesPanelHTML() {
   const comps = [...new Set(T.flatMap(t => t.games.map(g => g.comp)))];
   return `<div class="card fade" style="gap:12px"><div class="sm mu">Leave out a competition or a single game, such as a freak result or a cup tie against a weak side. Every hit rate updates.</div>`
     + `<div class="pills" style="flex-wrap:wrap;margin:0;padding:0">${comps.map(c => `<button data-a="comp" data-id="${c}" class="${S.comp[c] ? '' : 'on'}" aria-pressed="${!S.comp[c]}">${c}</button>`).join('')}</div>`
@@ -180,7 +198,8 @@ function sheetHTML() {
   const note = `<div class="note">Sample data. Every number on this sheet is made up for the demo.</div>`;
   const title = `<div><a class="back sm" href="#/">← All fixtures</a><div class="px" style="margin-top:4px">${f.meta}</div><h1 class="mt">${jer(T[0].code, 'l')}<span>${f.name}</span>${jer(T[1].code, 'l')}</h1>`
     + `<div class="status">${f.status === 'postponed' ? '<span class="badge bad">Postponed</span>' : ''}${f.lineups ? '<span class="badge good">Line-ups confirmed</span>' : '<span class="badge">Line-ups not out yet</span>'}`
-    + `<span class="sm mu">Updated ${fmtTime(f.updated)}</span><a class="sm" href="#/how">How the numbers work</a></div></div>`;
+    + `<span class="sm mu">Updated ${fmtTime(f.updated)}</span><a class="sm" href="#/how">How the numbers work</a></div>`
+    + `<div class="status">${T.map(t => favBtn(t.code, t.name)).join('')}</div></div>`;
   const alert = f.status === 'postponed' ? `<div class="card warnbox">This game has been postponed. The sheet stays up with the numbers from before the postponement.</div>` : '';
   const head = `<div class="card strong"><h2>Strongest lines</h2>
        ${top.length ? top.map(x => `<div class="kv"><span class="withjer">${jer(x.code)}${x.text}</span><span class="mono g" style="flex:none">${x.n}/${x.N}</span></div>`).join('') : `<div class="mu sm">No line landed in 80% of the selected games.</div>`}
@@ -191,9 +210,9 @@ function sheetHTML() {
     + (hasP ? '' : `<div class="sm mu">Player stats are added when the line-ups are confirmed.</div>`)
     + `<div class="sm mu">${wide ? 'Click' : 'Tap'} any stat for the game-by-game numbers${wide ? '' : ' and to move the line'}. Hit rates describe past games. They are not predictions or a promise of profit.</div>`;
   return wide
-    ? `<div class="sheet wide"><header class="dhead">${title}${tabs}</header><aside class="side">${note}${head}<div class="card"><h2>Referee</h2><div>${f.refLine}</div></div>`
+    ? `<div class="sheet wide"><header class="dhead">${title}${tabs}</header><aside class="side">${note}${head}${buildCard()}${refCard()}`
       + `<h2>Games used <span class="mono">${sel(0).length + sel(1).length}/20</span></h2>${gamesPanel()}</aside><section class="smain">${body}</section></div>`
-    : `<div class="sheet">${note}${title}${head}<div class="top">${tabs}${tab === 'Trends' ? '' : gamesBtn()}</div>${tab !== 'Trends' && S.filt ? gamesPanel() : ''}${body}</div>`;
+    : `<div class="sheet">${note}${title}${head}<div class="top">${tabs}${tab === 'Trends' ? '' : gamesBtn()}</div>${tab !== 'Trends' && S.filt ? gamesPanel() : ''}${body}${buildCard()}</div>`;
 }
 
 /* Sheet clicks. Returns true when it handled the action. */

@@ -119,6 +119,23 @@ input,select{font:inherit;color:var(--tx);background:var(--s1);border:1px solid 
 .badge.bad{background:rgba(229,72,77,.14);color:var(--bad)}
 .badge.big{background:var(--prems);color:var(--prem)}.badge .pc{width:12px;height:12px}
 .status{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:8px}
+/* premium locks, money paths, tools */
+.locked{position:relative;min-height:220px}
+.blur{filter:blur(6px);opacity:.7;pointer-events:none;user-select:none;max-height:460px;overflow:hidden}
+.lock{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(420px,92%);align-items:center;text-align:center;gap:8px;box-shadow:0 12px 32px var(--k)}
+.lock .ptile{margin:0}
+.books{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.signup{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:8px 24px;align-items:center;border-top:4px solid #19a974}
+.signup>p{grid-column:1/-1}.signup h2 .pi{color:var(--g)}
+.sform{display:flex;gap:8px}.sform input{flex:1;min-width:0}
+.share img{width:100%;max-width:440px;border-radius:12px;border:1px solid var(--ln)}
+.fav{display:inline-flex;align-items:center;gap:6px;min-height:36px;font-size:13px;font-weight:600;border-radius:999px}
+.fav .pc{width:14px;height:14px;filter:grayscale(1);opacity:.6}.faved .pc{filter:none;opacity:1}.faved{border-color:#f5b700}
+.planbtn{min-height:36px;font-size:13px;border-radius:999px;background:var(--prems);color:var(--prem);border-color:transparent}
+.badge.warn{background:var(--warns);color:var(--warn)}b.warn{color:var(--warn)}
+.chips i.w{background:var(--warns);color:var(--warn)}
+@media (max-width:699px){.signup{grid-template-columns:1fr}}
+@media (min-width:1000px) and (max-width:1299px){.nav a{padding:0 9px}.nav a>.pi,.planbtn{display:none}.site-top .in{gap:18px}}
 .warnbox{border-color:var(--bad);color:var(--bad);font-weight:500}
 @media (max-width:699px){.fxrow{grid-template-columns:44px minmax(0,1fr) 18px}.fxb{grid-column:2;justify-content:flex-start}.fxrow>.pi{grid-row:1;grid-column:3}}
 .fxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:10px}
