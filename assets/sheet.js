@@ -33,6 +33,7 @@ const REG = {};   // line id -> { st, ti }, filled on render so the +/- handler 
 const TABS = ['Goals', 'Result', 'Shots', 'Corners', 'Cards', 'Players', 'Trends'];
 const LEGEND = `<div class="sm mu">Last 10 games, oldest first. Green landed, faded is left out.</div>`;
 
+const fmtTime = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
 const isCount = st => st.mode === 'over' || st.mode === 'plus';
 const sel = ti => T[ti].games.map((g, i) => i).filter(i => !S.off[ti + '.' + i] && !S.comp[T[ti].games[i].comp]);
 const pick = (st, ti) => sel(ti).map(i => st.vals[i]);
@@ -92,7 +93,9 @@ function teamRow(gi, si) {
     + (open ? `<div class="det fade">${LEGEND}<div class="pair">${sts.map((st, ti) => detail(`${id}.${ti}`, st, ti, { team: T[ti].name, opp: T[1 - ti].name, home: ti === 0 }, undefined, `t|${gi}|${si}|${ti}`)).join('')}</div></div>` : '') + `</div>`;
 }
 
+const missing = name => (DATA.fixture.missing || []).includes(name);
 function marketTab(name) {
+  if (missing(name)) return `<div class="card mcard"><h2 style="padding:6px 0">${name}</h2><p class="mu" style="padding-bottom:6px">${name} stats aren't recorded for this competition, so we've left them out rather than guess.</p></div>`;
   const gi = T[0].groups.findIndex(g => g.name === name), stats = T[0].groups[gi].stats, more = !!S.more[name];
   const hidden = stats.filter(s => !s.core).length;
   return `<div class="card mcard" style="padding-top:4px">${W.matches ? `<h2 style="padding-top:10px">${name}</h2>` +`<div class="wrow whd px mu"><span>Stat</span>${T.map(t => `<span class="wt"><span class="withjer">${jer(t.code, 's')}${t.name}</span><span class="r">Avg</span><span class="r">L5</span><span class="r">Hits</span></span>`).join('')}</div>` : ''}${stats.map((st, si) => more || st.core ? teamRow(gi, si) : '').join('')}`
@@ -162,7 +165,7 @@ function strongest(all) {
   const out = [];
   const best = (st, ti) => { const b = baseLine(st, pick(st, ti)); return [b + 1, b, b - 1].filter(l => l > 0).map(l => ({ l, ...rate(st, ti, l) })).find(x => x.hot); };
   T.forEach((t, ti) => {
-    t.groups.forEach(g => g.stats.filter(st => st.opp).forEach(st => { const b = best(st, ti); if (b) out.push({ who: t.name, text: `${t.name}: ${lineName(st, b.l).toLowerCase()} ${st.label.toLowerCase()}`, ...b, team: 1, code: t.code }); }));
+    t.groups.filter(g => !missing(g.name)).forEach(g => g.stats.filter(st => st.opp).forEach(st => { const b = best(st, ti); if (b) out.push({ who: t.name, text: `${t.name}: ${lineName(st, b.l).toLowerCase()} ${st.label.toLowerCase()}`, ...b, team: 1, code: t.code }); }));
     t.players.forEach(p => p.stats.filter(st => st.core && isCount(st)).forEach(st => { const b = best(st, ti); if (b) out.push({ who: p.name, text: `${p.name} ${lineName(st, b.l)} ${st.label.toLowerCase()}`, ...b, team: 0, code: t.code }); }));
   });
   const seen = {}, by = (a, b) => b.n / b.N - a.n / a.N || b.n5 - a.n5;
@@ -175,13 +178,16 @@ function sheetHTML() {
   const f = DATA.fixture, top = strongest(), hasP = T[0].players.length > 0;
   const wide = W.matches, tab = wide && TABS.slice(0, 5).includes(S.tab) ? 'Teams' : !wide && S.tab === 'Teams' ? 'Goals' : S.tab;
   const note = `<div class="note">Sample data. Every number on this sheet is made up for the demo.</div>`;
-  const title = `<div><a class="back sm" href="#/">← All fixtures</a><div class="px" style="margin-top:4px">${f.meta}</div><h1 class="mt">${jer(T[0].code, 'l')}<span>${f.name}</span>${jer(T[1].code, 'l')}</h1></div>`;
+  const title = `<div><a class="back sm" href="#/">← All fixtures</a><div class="px" style="margin-top:4px">${f.meta}</div><h1 class="mt">${jer(T[0].code, 'l')}<span>${f.name}</span>${jer(T[1].code, 'l')}</h1>`
+    + `<div class="status">${f.status === 'postponed' ? '<span class="badge bad">Postponed</span>' : ''}${f.lineups ? '<span class="badge good">Line-ups confirmed</span>' : '<span class="badge">Line-ups not out yet</span>'}`
+    + `<span class="sm mu">Updated ${fmtTime(f.updated)}</span><a class="sm" href="#/how">How the numbers work</a></div></div>`;
+  const alert = f.status === 'postponed' ? `<div class="card warnbox">This game has been postponed. The sheet stays up with the numbers from before the postponement.</div>` : '';
   const head = `<div class="card strong"><h2>Strongest lines</h2>
        ${top.length ? top.map(x => `<div class="kv"><span class="withjer">${jer(x.code)}${x.text}</span><span class="mono g" style="flex:none">${x.n}/${x.N}</span></div>`).join('') : `<div class="mu sm">No line landed in 80% of the selected games.</div>`}
        <div class="sm mu" style="padding-top:8px">Landed in at least 80% of the selected games and 4 of the last 5.</div></div>`;
   const list = (wide ? ['Teams', 'Players', 'Trends'] : TABS).filter(t => hasP || t !== 'Players');
   const tabs = `<div class="pills" data-k="tabs">${list.map(t => `<button data-a="tab" data-id="${t}" class="${tab === t ? 'on' : ''}">${t}</button>`).join('')}</div>`;
-  const body = (tab === 'Trends' ? notesTab() : tab === 'Players' && hasP ? playersTab() : tab === 'Teams' ? `<div class="mgrid">${T[0].groups.map(g => marketTab(g.name)).join('')}</div>` : marketTab(tab === 'Players' ? 'Goals' : tab))
+  const body = alert + (tab === 'Trends' ? notesTab() : tab === 'Players' && hasP ? playersTab() : tab === 'Teams' ? `<div class="mgrid">${T[0].groups.map(g => marketTab(g.name)).join('')}</div>` : marketTab(tab === 'Players' ? 'Goals' : tab))
     + (hasP ? '' : `<div class="sm mu">Player stats are added when the line-ups are confirmed.</div>`)
     + `<div class="sm mu">${wide ? 'Click' : 'Tap'} any stat for the game-by-game numbers${wide ? '' : ' and to move the line'}. Hit rates describe past games. They are not predictions or a promise of profit.</div>`;
   return wide

@@ -11,18 +11,18 @@ const store = {
 const A = {
   slip: store.get('slip', []), bets: store.get('bets', null),
   alerts: store.get('alerts', { lineups: true, refs: true, trends: false, finder: false, tg: true, email: false }),
-  comp: 'All', fcomp: 'All', fmin: 80, fkind: 'all', otab: 'signup'
+  comp: 'All', day: 'All', big: false, q: '', fcomp: 'All', fkind: 'all', ftab: 'form', otab: 'signup'
 };
 const save = () => { store.set('slip', A.slip); store.set('bets', A.bets); store.set('alerts', A.alerts); };
 
 /* ---------- Shell ---------- */
 const NAV = [['', 'Fixtures', 'cal'], ['finder', 'Line finder', 'search'], ['check', 'Check my bet', 'check'], ['tracker', 'Bet tracker', 'chart'], ['offers', 'Offers', 'gift'], ['alerts', 'Alerts', 'bell']];
 /* page icon tiles: route -> [icon, colour] */
-const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], premium: ['star', '#1a2233'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
+const PAGE_ICO = { finder: ['search', '#1f56d6'], check: ['check', '#0b8a5c'], tracker: ['chart', '#7b3fe4'], offers: ['gift', '#e5484d'], alerts: ['bell', '#e08a00'], premium: ['star', '#1a2233'], how: ['info', '#1f56d6'], safer: ['shield', '#0b8a5c'], more: ['menu', '#1f56d6'] };
 const BNAV = [['', 'Fixtures', 'cal'], ['finder', 'Finder', 'search'], ['check', 'My bet', 'check'], ['tracker', 'Tracker', 'chart'], ['more', 'More', 'menu']];
-const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', premium: 'Premium', safer: 'Safer gambling', more: 'More' };
+const TITLES = { '': 'Fixtures', finder: 'Line finder', check: 'Check my bet', tracker: 'Bet tracker', offers: 'Offers', alerts: 'Alerts', premium: 'Premium', how: 'How the numbers work', safer: 'Safer gambling', more: 'More' };
 const route = () => { const [p = '', id] = location.hash.replace(/^#\/?/, '').split('/'); return { p, id }; };
-const navOn = (k, p) => k === p || (k === '' && p === 'match') || (k === 'more' && ['offers', 'alerts', 'premium', 'safer'].includes(p));
+const navOn = (k, p) => k === p || (k === '' && p === 'match') || (k === 'more' && ['offers', 'alerts', 'premium', 'how', 'safer'].includes(p));
 const cur = (k, p) => navOn(k, p) ? ' class="on" aria-current="page"' : '';
 const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
 const slipCount = () => A.slip.length ? `<span class="count">${A.slip.length}</span>` : '';
@@ -32,24 +32,36 @@ const topBar = p => `<header class="site-top"><div class="in"><a class="logo" hr
   + `<div class="top-r"><button class="icon ghost" data-a="theme" data-id="t" aria-label="Switch to ${isDark() ? 'light' : 'dark'} mode">${ico(isDark() ? 'sun' : 'moon')}</button>`
   + `<a class="btn hide-m" href="#/premium">${ico('star')}Go Premium</a></div></div><div class="pixstrip"></div></header>`;
 const bottomNav = p => `<nav class="bnav" aria-label="Main">${BNAV.map(([k, l, i]) => `<a href="#/${k}"${cur(k, p)} style="position:relative">${ico(i)}${l}${k === 'check' ? slipCount() : ''}</a>`).join('')}</nav>`;
-const footer = () => `<footer class="foot"><div><b>18+</b> · Please gamble responsibly · <a href="#/safer">Safer gambling</a> · <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a></div>`
+const footer = () => `<footer class="foot"><div><b>18+</b> · Please gamble responsibly · <a href="#/safer">Safer gambling</a> · <a href="#/how">How the numbers work</a> ·<a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a></div>`
   + `<div class="mu sm">Pixeltipster publishes statistics about past matches. We don't take bets, give tips or predict results. This demo uses sample data.</div></footer>`;
 const pageHead = (title, sub, extra = '') => { const [i, c] = PAGE_ICO[route().p] || []; return `<div class="head"><div>${i ? `<span class="ptile" style="background:${c}">${ico(i)}</span>` : ''}<h1>${title}</h1>${sub ? `<p class="mu" style="margin-top:6px">${sub}</p>` : ''}</div>${extra}</div>`; };
 const demo = txt => `<div class="note">${txt}</div>`;
 const pill = (k, v, l) => `<button data-a="${k}" data-id="${v}" class="${A[k] == v ? 'on' : ''}" aria-pressed="${A[k] == v}">${l}</button>`;
 
 /* ---------- Fixtures ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const dayName = d => { const n = Math.round((new Date(d) - new Date(TODAY)) / 864e5); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : fmtDate(d); };
+const fxBadges = f => (f.status === 'postponed' ? `<span class="badge bad">Postponed</span>` : '') + (f.lineups ? `<span class="badge good">Line-ups in</span>` : '') + (f.big ? `<span class="badge big">${ico('star')}Big game</span>` : '');
+const fxRow = f => `<a class="fxrow" href="#/match/${f.id}"><span class="mono fxko">${f.ko}</span><span class="fxteams"><span class="fxteam">${jer(f.hc)}<b>${f.home}</b></span><span class="fxteam">${jer(f.ac)}<b>${f.away}</b></span></span><span class="fxb">${fxBadges(f)}</span>${ico('arrow')}</a>`;
+function fixtureList() {
+  const q = A.q.trim().toLowerCase();
+  const list = FIXTURES.filter(f => (A.comp === 'All' || f.comp === A.comp) && (A.day === 'All' || f.date === A.day) && (!A.big || f.big) && (!q || (f.home + ' ' + f.away).toLowerCase().includes(q))).sort((a, b) => a.ko.localeCompare(b.ko));
+  if (!list.length) return `<div class="card mu">No fixtures match. Try another day, competition or team.</div>`;
+  return [...new Set(list.map(f => f.date))].map(d => `<section class="fxday"><h2>${dayName(d)}${dayName(d) !== fmtDate(d) ? ` <span class="mu" style="font-weight:400">${fmtDate(d)}</span>` : ''}</h2>`
+    + [...new Set(list.filter(f => f.date === d).map(f => f.comp))].map(c => `<div class="card fxcomp"><div class="px">${compDot(c)}${c}</div>`
+      + list.filter(f => f.date === d && f.comp === c).map(fxRow).join('') + `</div>`).join('') + `</section>`).join('');
+}
 function fixturesPage() {
-  const comps = ['All', ...new Set(FIXTURES.map(f => f.comp))], list = FIXTURES.filter(f => A.comp === 'All' || f.comp === A.comp);
+  const comps = ['All', ...new Set(FIXTURES.map(f => f.comp))], days = ['All', ...new Set(FIXTURES.map(f => f.date))];
   return `<section class="card hero"><div><div class="kits" aria-hidden="true">${Object.keys(KITS).map(k => jer(k)).join('')}</div><h1>Stat sheets for every bet builder</h1><p class="mu">Hit rates from each team's and player's recent games, grouped the way bookmakers group their bet builder markets. Facts about past games, never tips.</p>`
-    + `<div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap"><a class="btn" href="#/match/liv-mci">See an example sheet</a><a class="btn btn2" href="#/premium">Free vs Premium</a></div></div>`
+    + `<div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap"><a class="btn" href="#/match/liv-mci">See an example sheet</a><a class="btn btn2" href="#/how">How the numbers work</a></div></div>`
     + `<ul class="trust">${['Every number links to the games behind it', 'Leave out cup games or freak results', 'No odds, no tips, no predictions', '3 free sheets a week, no card needed'].map(t => `<li>${ico('tick')}${t}</li>`).join('')}</ul></section>`
     + demo('Demo: fixtures and numbers are sample data until the live feed is connected.')
-    + `<div class="pills" data-k="fxcomp">${comps.map(c => `<button data-a="fxcomp" data-id="${c}" class="${A.comp === c ? 'on' : ''}" aria-pressed="${A.comp === c}">${c === 'All' ? '' : compDot(c)}${c}</button>`).join('')}</div>`
-    + [...new Set(list.map(f => f.date))].map(d => `<section><h2>${fmtDate(d)}</h2><div class="fxgrid">${list.filter(f => f.date === d).map(f =>
-      `<a class="card fx" href="#/match/${f.id}"><span class="px">${compDot(f.comp)}${f.comp} · ${f.ko}</span>`
-      + `<span class="fxteam">${jer(f.hc)}<b>${f.home}</b></span><span class="fxteam">${jer(f.ac)}<b>${f.away}</b></span>`
-      + `<span class="sm mu">${f.full ? 'Team, player and trend stats' : 'Team stats now · players at line-ups'}</span><span class="go">Open sheet ${ico('arrow')}</span></a>`).join('')}</div></section>`).join('');
+    + `<div class="card fxfilters"><div class="fxsearch"><input id="fxq" type="search" placeholder="Search for a team" value="${esc(A.q)}" aria-label="Search fixtures by team" autocomplete="off">`
+    + `<button data-a="big" data-id="b" class="${A.big ? 'on' : ''}" aria-pressed="${A.big}">${ico('star')}Big games</button></div>`
+    + `<div class="pills" data-k="fxday">${days.map(d => `<button data-a="fxday" data-id="${d}" class="${A.day === d ? 'on' : ''}" aria-pressed="${A.day === d}">${d === 'All' ? 'All days' : dayName(d)}</button>`).join('')}</div>`
+    + `<div class="pills" data-k="fxcomp">${comps.map(c => `<button data-a="fxcomp" data-id="${c}" class="${A.comp === c ? 'on' : ''}" aria-pressed="${A.comp === c}">${c === 'All' ? 'All competitions' : compDot(c) + c}</button>`).join('')}</div></div>`
+    + `<div id="fxlist">${fixtureList()}</div>`;
 }
 
 function matchPage(id) {
@@ -57,20 +69,74 @@ function matchPage(id) {
   return sheetHTML();
 }
 
-/* ---------- Line finder ---------- */
+/* ---------- Line finder: what a plain hit rate hides ----------
+   form     last 5 average far from the 5 before
+   match    opponent allows far more or less than this team usually gets
+   stretch  highest line that landed in 7-9 of 10 (every-game lines left out), furthest above the average first */
+const FTABS = { form: 'Form changes', match: 'Matchups', stretch: 'Stretch lines' };
+function finderRows() {
+  const out = { form: [], match: [], stretch: [] };
+  FIXTURES.filter(f => f.status !== 'postponed').forEach(f => withFixture(f.id, () => {
+    const miss = DATA.fixture.missing || [];
+    T.forEach((t, ti) => {
+      const stats = [];
+      t.groups.filter(g => !miss.includes(g.name)).forEach(g => g.stats.filter(s => s.core && s.mode === 'over').forEach(s => stats.push({ s, who: t.name, team: 1 })));
+      t.players.forEach(p => p.stats.filter(s => s.core && s.mode === 'plus').forEach(s => stats.push({ s, who: p.name, team: 0 })));
+      stats.forEach(({ s, who, team }) => {
+        const base = { f, code: t.code, team, who, label: s.label.toLowerCase() }, a10 = avg(s.vals);
+        const prev = avg(s.vals.slice(0, 5)), last = avg(s.vals.slice(5)), diff = last - prev, rel = Math.abs(diff) / Math.max(prev, 0.5);
+        if (Math.abs(diff) >= (team ? 1.5 : 0.8) && rel >= 0.4) out.form.push({ ...base, prev, last, diff, sort: rel });
+        if (team && s.opp) { const r = s.opp / a10; if (r >= 1.25 || r <= 0.75) out.match.push({ ...base, opp: T[1 - ti].name, mine: a10, allow: s.opp, r, sort: Math.abs(Math.log(r)) }); }
+        for (let l = s.mode === 'over' ? Math.max(...s.vals) - 0.5 : Math.max(...s.vals); l > 0; l--) {
+          const n = s.vals.filter(hitFn(s, l)).length;
+          if (n >= 7) { if (n < 10) out.stretch.push({ ...base, l, n, a10, line: lineName(s, l), sort: (l - a10) / Math.max(a10, 0.5) + n / 100 }); break; }
+        }
+      });
+    });
+  }));
+  Object.values(out).forEach(a => a.sort((x, y) => y.sort - x.sort));
+  return out;
+}
 function finderPage() {
-  const rows = [], comps = ['All', ...new Set(FIXTURES.map(f => f.comp))];
-  FIXTURES.forEach(f => withFixture(f.id, () => strongest(true).forEach(x => rows.push({ ...x, f }))));
-  const list = rows.filter(x => (A.fcomp === 'All' || x.f.comp === A.fcomp) && 100 * x.n / x.N >= A.fmin && (A.fkind === 'all' || (A.fkind === 'team') === !!x.team))
-    .sort((a, b) => b.n / b.N - a.n / a.N || b.n5 - a.n5), cols = 'grid-template-columns:minmax(0,1fr) 64px 56px';
-  return pageHead('Line finder <span class="prem">Premium</span>', 'The lines that landed most often across every fixture on the site, best first. Open any line to see the games behind it.')
+  const all = finderRows(), comps = ['All', ...new Set(FIXTURES.map(f => f.comp))], tab = A.ftab;
+  const list = all[tab].filter(x => (A.fcomp === 'All' || x.f.comp === A.fcomp) && (tab === 'match' || A.fkind === 'all' || (A.fkind === 'team') === !!x.team));
+  const row = (x, main, right) => `<a class="tr" style="grid-template-columns:minmax(0,1fr) auto" href="#/match/${x.f.id}"><span class="withjer">${jer(x.code)}<span><b style="font-weight:600">${main}</b><br>`
+    + `<span class="sm mu">${x.f.home} v ${x.f.away} · ${x.f.comp} · ${dayName(x.f.date)}</span></span></span><span class="mono r">${right}</span></a>`;
+  const rows = tab === 'form' ? list.map(x => row(x, `${x.who}: ${x.label}`, `${x.prev.toFixed(1)} → <b class="${x.diff > 0 ? 'g' : 'bad'}">${x.last.toFixed(1)}</b>`))
+    : tab === 'match' ? list.map(x => row(x, `${x.who}: ${x.label}`, `${x.mine.toFixed(1)} v <b class="${x.r > 1 ? 'g' : 'bad'}">${x.allow.toFixed(1)}</b>`))
+    : list.map(x => row(x, `${x.who}: ${x.line.toLowerCase()} ${x.label}`, `<b class="g">${x.n}/10</b><br><span class="sm mu">avg ${x.a10.toFixed(1)}</span>`));
+  const head = { form: ['Average: 5 before', 'last 5'], match: ['Team gets', 'opponent allows'], stretch: ['Hits', 'average'] }[tab];
+  const explain = {
+    form: 'Stats where the last 5 games moved a long way from the 5 before. A 10-game hit rate is slow to show changes like these.',
+    match: "Team stats where the opponent gives away at least 25% more or less than this team usually gets, per game.",
+    stretch: 'For each stat, the highest line that landed in 7, 8 or 9 of the last 10, furthest above the average first. Lines that landed every game are left out.'
+  }[tab];
+  return pageHead('Line finder <span class="prem">Premium</span>', 'What a plain hit rate hides, across every fixture on the site. Open any row to see the games behind it.')
     + demo('Demo: sample data. Free to use while the site is in testing.')
-    + `<div class="card" style="gap:12px"><div class="pills" data-k="fcomp">${comps.map(c => pill('fcomp', c, c)).join('')}</div>`
-    + `<div style="display:flex;gap:16px;flex-wrap:wrap"><div class="pills">${[80, 90, 100].map(v => pill('fmin', v, `Landed ${v}%${v < 100 ? '+' : ''}`)).join('')}</div>`
-    + `<div class="pills">${[['all', 'All lines'], ['team', 'Team'], ['player', 'Player']].map(([v, l]) => pill('fkind', v, l)).join('')}</div></div></div>`
-    + `<div class="card"><div class="tbl"><div class="tr th px" style="${cols}"><span>${list.length} lines</span><span class="r">Hits</span><span class="r">Last 5</span></div>`
-    + (list.length ? list.map(x => `<a class="tr" style="${cols}" href="#/match/${x.f.id}"><span class="withjer">${jer(x.code)}<span><b style="font-weight:600">${x.text}</b><br><span class="sm mu">${x.f.home} v ${x.f.away} · ${x.f.comp} · ${fmtDate(x.f.date)}</span></span></span>`
-      + `<b class="mono g r">${x.n}/${x.N}</b><span class="mono r mu">${x.n5}/${x.N5}</span></a>`).join('') : `<div class="tr mu">No lines match these filters.</div>`) + `</div></div>`;
+    + `<div class="pills" data-k="ftab">${Object.entries(FTABS).map(([k, l]) => pill('ftab', k, l)).join('')}</div>`
+    + `<div class="card" style="gap:12px"><p>${explain}</p><div class="pills" data-k="fcomp">${comps.map(c => pill('fcomp', c, c === 'All' ? 'All competitions' : compDot(c) + c)).join('')}</div>`
+    + (tab === 'match' ? '' : `<div class="pills">${[['all', 'Teams and players'], ['team', 'Teams'], ['player', 'Players']].map(([v, l]) => pill('fkind', v, l)).join('')}</div>`) + `</div>`
+    + `<div class="card"><div class="tbl"><div class="tr th px" style="grid-template-columns:minmax(0,1fr) auto"><span>${list.length} found</span><span class="r">${head[0]} → ${head[1]}</span></div>`
+    + (rows.slice(0, 50).join('') || `<div class="tr mu">Nothing matches these filters.</div>`)
+    + (rows.length > 50 ? `<div class="tr sm mu">Showing the top 50. Pick a competition to narrow the list.</div>` : '') + `</div></div>`;
+}
+
+/* ---------- How the numbers work ---------- */
+function howPage() {
+  const sec = (t, b) => `<div class="card" style="gap:8px"><h2>${t}</h2>${b}</div>`;
+  return pageHead('How the numbers work', 'What every number on a sheet means, and where it comes from.')
+    + `<div class="split">`
+    + sec('Where the data comes from', `<p>On the live site, match and player stats will come from a football data provider, most likely API-Football. Scripts build each sheet from that data. Nobody edits the numbers by hand.</p><p class="mu sm">This demo uses made-up sample data.</p>`)
+    + sec('Lines and hits', `<p><b>Over 2.5</b> means 3 or more. <b>1+</b> means at least 1. A <b>hit</b> is a game where the line was reached, so <b>8/10</b> means it was reached in 8 of the last 10 games.</p>`)
+    + sec('Last 10 and last 5', `<p>Every stat uses the team's or player's last 10 games in all competitions. <b>Last 5</b> is the most recent half, to show whether something has changed lately.</p>`)
+    + sec('Leaving games out', `<p>The games filter drops a competition or a single game, such as a freak result. Every hit rate, average and strongest line then uses only the games you kept, which is why you may see 7/9 instead of 7/10.</p>`)
+    + sec('Strongest lines', `<p>A line appears in a sheet's Strongest lines box when it landed in at least 80% of the selected games and in 4 of the last 5.</p>`)
+    + sec('Averages, venue and opponent', `<p><b>Average</b> is per game across the selected games. <b>At home</b> or <b>Away</b> is the average at this game's venue. <b>Allow</b> is how many the opponent gives away per game. When that's clearly more or fewer than the team usually gets, the sheet says which way it leans.</p>`)
+    + sec('Updates and line-ups', `<p>Sheets will be rebuilt each morning and again when line-ups are confirmed. Player stats appear once line-ups are in. Every sheet shows when it was last updated.</p>`)
+    + sec('Missing stats', `<p>Some competitions don't record every stat. When a stat is missing we leave that market out and say so, rather than guess.</p>`)
+    + sec('Trends', `<p>Trend notes are written for the biggest games, using only stats from that game's data. They point out changes the 10-game numbers can hide, such as a player moving position.</p>`)
+    + sec("What we don't do", `<p>We don't show odds, give tips or predict results. A hit rate is a fact about past games. It doesn't make a bet more likely to win.</p>`)
+    + `</div>`;
 }
 
 /* ---------- Check my bet ---------- */
@@ -130,14 +196,14 @@ function trackerPage() {
     + `<div class="split"><div class="card" style="gap:10px"><h2>By bet type</h2>${types[0] && types[0][1].pl < 0 ? `<p class="mu">${types[0][0]} bets have cost you the most: ${money(types[0][1].pl)} over ${types[0][1].n} bets.</p>` : ''}`
     + types.map(([t, x]) => `<div style="display:flex;flex-direction:column;gap:4px"><div class="kv"><span>${t} <span class="mu sm">· ${x.n} bets</span></span><b class="mono ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</b></div><div class="bar2"><i style="width:${Math.abs(x.pl) / top * 100}%;background:var(--${x.pl < 0 ? 'bad' : 'g'})"></i></div></div>`).join('') + `</div>`
     + `<div class="card"><h2 style="padding-bottom:6px">Bookmaker balances</h2><div class="tbl"><div class="tr th px" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span>Bookmaker</span><span class="r">Start</span><span class="r">P/L</span><span class="r">Balance</span></div>`
-    + books.map(([k, x]) => `<div class="tr mono" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span style="font-family:'IBM Plex Sans'">${k}</span><span class="r mu">${money(START[k] || 0)}</span><span class="r ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</span><b class="r">${money((START[k] || 0) + x.pl)}</b></div>`).join('') + `</div></div></div>`
+    + books.map(([k, x]) => `<div class="tr mono" style="grid-template-columns:minmax(0,1fr) 80px 80px 80px"><span style="font-family:'IBM Plex Sans'">${esc(k)}</span><span class="r mu">${money(START[k] || 0)}</span><span class="r ${x.pl < 0 ? 'bad' : 'g'}">${money(x.pl)}</span><b class="r">${money((START[k] || 0) + x.pl)}</b></div>`).join('') + `</div></div></div>`
     + `<div class="card" style="gap:12px"><h2>Add a bet</h2><div class="form"><label>Date<input id="nb-date" type="date" value="2026-10-11"></label><label>Bookmaker<input id="nb-bk" placeholder="e.g. Bookmaker A"></label>`
     + `<label>Type<select id="nb-type">${TYPES.map(t => `<option>${t}</option>`).join('')}</select></label><label>Stake (£)<input id="nb-stake" type="number" min="0" step="0.5" inputmode="decimal"></label>`
     + `<label>Odds (decimal)<input id="nb-odds" type="number" min="1" step="0.01" inputmode="decimal"></label><label>Result<select id="nb-res">${['Pending', 'Won', 'Lost', 'Void'].map(t => `<option>${t}</option>`).join('')}</select></label>`
     + `<button class="btn" data-a="addbet" data-id="b">Add bet</button></div></div>`
     + `<div class="card"><div class="head" style="padding-bottom:6px"><h2>Your bets</h2>${sample ? `<button data-a="clearbets" data-id="x">Clear sample bets</button>` : bets.length ? '' : `<button data-a="samplebets" data-id="s">Show sample bets</button>`}</div><div class="mxwrap"><div class="tbl" style="min-width:640px">`
     + `<div class="tr th px" style="${hc}"><span>Date</span><span>Bookmaker</span><span>Type</span><span class="r">Stake</span><span class="r">Odds</span><span>Result</span><span class="r">Return</span></div>`
-    + (bets.map(b => `<div class="tr" style="${hc}"><span class="mono sm">${b.date.slice(5).split('-').reverse().join('/')}</span><span>${b.bk}</span><span>${b.type}</span><span class="mono r">${money(b.stake)}</span><span class="mono r">${b.odds ? b.odds.toFixed(2) : '-'}</span>`
+    + (bets.map(b => `<div class="tr" style="${hc}"><span class="mono sm">${b.date.slice(5).split('-').reverse().join('/')}</span><span>${esc(b.bk)}</span><span>${esc(b.type)}</span><span class="mono r">${money(b.stake)}</span><span class="mono r">${b.odds ? b.odds.toFixed(2) : '-'}</span>`
       + `<span class="${b.res === 'Won' ? 'g' : b.res === 'Lost' ? 'bad' : 'mu'}">${b.res}</span><span class="mono r">${b.res === 'Pending' ? '-' : money(back(b))}</span></div>`).join('') || `<div class="tr mu">No bets yet.</div>`) + `</div></div></div>`;
 }
 
@@ -190,15 +256,16 @@ function saferPage() {
 }
 
 const morePage = () => pageHead('More', '')
-  + `<div class="card links">${[['offers', 'Bookmaker offers'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
+  + `<div class="card links">${[['offers', 'Bookmaker offers'], ['alerts', 'Alerts'], ['premium', 'Free and Premium'], ['how', 'How the numbers work'], ['safer', 'Safer gambling']].map(([k, l]) => `<a href="#/${k}">${l}${ico('arrow')}</a>`).join('')}</div>`
   + `<button data-a="theme" data-id="t2" style="align-self:flex-start;display:inline-flex;gap:8px;align-items:center">${ico(isDark() ? 'sun' : 'moon')}${isDark() ? 'Light' : 'Dark'} mode</button>`;
 
 /* ---------- Actions and rendering ---------- */
 function appAction(a, id) {
   const v = k => document.getElementById(k).value;
   if (a === 'fxcomp') A.comp = id;
-  else if (a === 'fcomp' || a === 'fkind' || a === 'otab') A[a] = id;
-  else if (a === 'fmin') A.fmin = +id;
+  else if (a === 'fxday') A.day = id;
+  else if (a === 'big') A.big = !A.big;
+  else if (a === 'fcomp' || a === 'fkind' || a === 'ftab' || a === 'otab') A[a] = id;
   else if (a === 'addleg') A.slip = A.slip.includes(id) ? A.slip.filter(s => s !== id) : [...A.slip, id];
   else if (a === 'rmleg') A.slip = A.slip.filter(s => s !== id);
   else if (a === 'clearslip') A.slip = [];
@@ -218,7 +285,7 @@ function appAction(a, id) {
   return true;
 }
 
-const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, safer: saferPage, more: morePage };
+const PAGES = { '': fixturesPage, match: matchPage, finder: finderPage, check: checkPage, tracker: trackerPage, offers: offersPage, alerts: alertsPage, premium: premiumPage, how: howPage, safer: saferPage, more: morePage };
 function render() {
   const r = route(), site = document.getElementById('site');
   const sx = {}; site.querySelectorAll('.pills[data-k]').forEach(p => sx[p.dataset.k] = p.scrollLeft);
@@ -233,6 +300,9 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-a]'); if (!b) return;
   const { a, id, d } = b.dataset;
   if (sheetAction(a, id, d) || appAction(a, id)) render();
+});
+document.addEventListener('input', e => {   // team search: redraw only the list so the box keeps focus
+  if (e.target.id === 'fxq') { A.q = e.target.value; document.getElementById('fxlist').innerHTML = fixtureList(); }
 });
 addEventListener('hashchange', () => { render(); scrollTo(0, 0); });
 W.addEventListener('change', render); WM.addEventListener('change', render);

@@ -1,20 +1,50 @@
 /* ---------- SAMPLE DATA (replace with the real feed) ----------
    Made-up fixtures and numbers for the demo. The live data job replaces this
-   file with real fixture files in the same shape. Only liv-mci has players and trends. */
+   file with real fixture files in the same shape. Only liv-mci has players and trends.
+   Fixture status fields the data job must also write:
+     updated  ISO time the sheet was built      lineups  true once line-ups are confirmed
+     status   'scheduled' | 'postponed'           missing  market groups with no data, e.g. ['Corners']
+     big      chosen for trend notes */
+const TODAY = '2026-10-11';   // live: today's date
 const FIXTURES = [
-  ['liv-mci', 'Liverpool', 'LIV', 'Man City', 'MCI', 'Premier League', 'Anfield', '2026-10-11', '16:30'],
-  ['rma-bar', 'Real Madrid', 'RMA', 'Barcelona', 'BAR', 'LaLiga', 'Bernabéu', '2026-10-11', '20:00'],
-  ['int-juv', 'Inter', 'INT', 'Juventus', 'JUV', 'Serie A', 'San Siro', '2026-10-11', '19:45'],
-  ['eng-esp', 'England', 'ENG', 'Spain', 'ESP', 'Nations League', 'Wembley', '2026-10-13', '19:45'],
-  ['ars-che', 'Arsenal', 'ARS', 'Chelsea', 'CHE', 'Premier League', 'Emirates', '2026-10-17', '17:30'],
-  ['bay-bvb', 'Bayern', 'FCB', 'Dortmund', 'BVB', 'Bundesliga', 'Allianz Arena', '2026-10-17', '17:30'],
-  ['psg-om', 'PSG', 'PSG', 'Marseille', 'OM', 'Ligue 1', 'Parc des Princes', '2026-10-18', '20:45'],
+  ['liv-mci', 'Liverpool', 'LIV', 'Man City', 'MCI', 'Premier League', 'Anfield', '2026-10-11', '16:30', 'big lineups'],
+  ['eve-new', 'Everton', 'EVE', 'Newcastle', 'NEW', 'Premier League', 'Hill Dickinson Stadium', '2026-10-11', '14:00'],
+  ['rma-bar', 'Real Madrid', 'RMA', 'Barcelona', 'BAR', 'LaLiga', 'Bernabéu', '2026-10-11', '20:00', 'big'],
+  ['atm-sev', 'Atlético Madrid', 'ATM', 'Sevilla', 'SEV', 'LaLiga', 'Metropolitano', '2026-10-11', '17:30'],
+  ['int-juv', 'Inter', 'INT', 'Juventus', 'JUV', 'Serie A', 'San Siro', '2026-10-11', '19:45', 'big'],
+  ['lyo-mon', 'Lyon', 'LYO', 'Monaco', 'MON', 'Ligue 1', 'Groupama Stadium', '2026-10-11', '16:15'],
+  ['eng-esp', 'England', 'ENG', 'Spain', 'ESP', 'Nations League', 'Wembley', '2026-10-13', '19:45', 'big nocorners'],
+  ['fra-ita', 'France', 'FRA', 'Italy', 'ITA', 'Nations League', 'Stade de France', '2026-10-13', '19:45'],
+  ['ger-ned', 'Germany', 'GER', 'Netherlands', 'NED', 'Nations League', 'Düsseldorf Arena', '2026-10-13', '19:45'],
+  ['ars-che', 'Arsenal', 'ARS', 'Chelsea', 'CHE', 'Premier League', 'Emirates', '2026-10-17', '17:30', 'big'],
+  ['avl-tot', 'Aston Villa', 'AVL', 'Tottenham', 'TOT', 'Premier League', 'Villa Park', '2026-10-17', '15:00'],
+  ['bha-ful', 'Brighton', 'BHA', 'Fulham', 'FUL', 'Premier League', 'Amex Stadium', '2026-10-17', '15:00'],
+  ['bay-bvb', 'Bayern', 'FCB', 'Dortmund', 'BVB', 'Bundesliga', 'Allianz Arena', '2026-10-17', '17:30', 'big'],
+  ['rbl-b04', 'Leipzig', 'RBL', 'Leverkusen', 'B04', 'Bundesliga', 'Red Bull Arena', '2026-10-17', '14:30'],
+  ['mil-laz', 'Milan', 'MIL', 'Lazio', 'LAZ', 'Serie A', 'San Siro', '2026-10-17', '19:45'],
+  ['vil-bet', 'Villarreal', 'VIL', 'Real Betis', 'BET', 'LaLiga', 'La Cerámica', '2026-10-17', '20:00'],
+  ['psg-om', 'PSG', 'PSG', 'Marseille', 'OM', 'Ligue 1', 'Parc des Princes', '2026-10-18', '20:45', 'big'],
+  ['lil-nic', 'Lille', 'LIL', 'Nice', 'NIC', 'Ligue 1', 'Stade Pierre-Mauroy', '2026-10-18', '15:00'],
+  ['vfb-sge', 'Stuttgart', 'VFB', 'Frankfurt', 'SGE', 'Bundesliga', 'MHPArena', '2026-10-18', '17:30'],
+  ['ata-fio', 'Atalanta', 'ATA', 'Fiorentina', 'FIO', 'Serie A', 'Gewiss Stadium', '2026-10-18', '14:00'],
   ['nap-ben', 'Napoli', 'NAP', 'Benfica', 'BEN', 'Champions League', 'Maradona', '2026-10-20', '20:00'],
-  ['rom-aja', 'Roma', 'ROM', 'Ajax', 'AJA', 'Europa League', 'Olimpico', '2026-10-22', '17:45']
-].map(([id, home, hc, away, ac, comp, venue, date, ko]) => ({ id, home, hc, away, ac, comp, venue, date, ko, full: id === 'liv-mci' }));
+  ['ars-fcb', 'Arsenal', 'ARS', 'Bayern', 'FCB', 'Champions League', 'Emirates', '2026-10-20', '20:00', 'big'],
+  ['mci-int', 'Man City', 'MCI', 'Inter', 'INT', 'Champions League', 'Etihad', '2026-10-21', '20:00', 'big'],
+  ['rom-aja', 'Roma', 'ROM', 'Ajax', 'AJA', 'Europa League', 'Olimpico', '2026-10-22', '17:45', 'postponed'],
+  ['tot-por', 'Tottenham', 'TOT', 'Porto', 'POR', 'Europa League', 'Tottenham Hotspur Stadium', '2026-10-22', '20:00']
+].map(([id, home, hc, away, ac, comp, venue, date, ko, flags = '']) => ({
+  id, home, hc, away, ac, comp, venue, date, ko, full: id === 'liv-mci', big: flags.includes('big'), lineups: flags.includes('lineups'),
+  status: flags.includes('postponed') ? 'postponed' : 'scheduled', missing: flags.includes('nocorners') ? ['Corners'] : [],
+  updated: flags.includes('lineups') ? '2026-10-11T14:20:00Z' : '2026-10-11T07:05:00Z'
+}));
 const fmtDate = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 const FXCACHE = {};
-const fixtureData = id => FXCACHE[id] || (FXCACHE[id] = sample(FIXTURES.find(f => f.id === id) || FIXTURES[0]));
+const fixtureData = id => {
+  if (FXCACHE[id]) return FXCACHE[id];
+  const f = FIXTURES.find(x => x.id === id) || FIXTURES[0], d = sample(f);
+  Object.assign(d.fixture, { updated: f.updated, lineups: f.lineups, status: f.status, missing: f.missing });
+  return FXCACHE[id] = d;
+};
 
 function sample(f) {
   const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -42,7 +72,7 @@ function sample(f) {
     const games = ten((_, i) => ({ date: day(i), opp: opps[i], comp: comps[i], ha: (i + (home ? 0 : 1)) % 2 ? 'A' : 'H', score: `${goals[i]}-${goalsA[i]}` }));
     const half = (a, p) => a.map(n => bin(r, n, p)), sub = (a, b) => a.map((x, i) => x - b[i]), add = (a, b) => a.map((x, i) => x + b[i]), yn = f => ten((_, i) => f(i) ? 1 : 0);
     const g1 = half(goals, 0.45), gA1 = half(goalsA, 0.45), s1 = half(sot, 0.47), c1 = half(corners, 0.48), k1 = half(cards, 0.35);
-    const v = a => ({ venue: avg(a) * (home ? 1.04 + r() * 0.1 : 0.88 + r() * 0.1) }), vo = a => ({ ...v(a), opp: avg(a) * (0.82 + r() * 0.36) });
+    const v = a => ({ venue: avg(a) * (home ? 1.04 + r() * 0.1 : 0.88 + r() * 0.1) }), vo = a => ({ ...v(a), opp: avg(a) * (0.7 + r() * 0.6) });
     const o = (k, l, a) => st(k, l, a, 'over', vo(a)), ov = (k, l, a) => st(k, l, a, 'over', v(a));
     const groups = [
       { name: 'Goals', stats: [o('goals', 'Team goals', goals), ov('conceded', 'Goals conceded', goalsA), ov('mgoals', 'Match goals', add(goals, goalsA)), ov('g1h', 'Team 1st-half goals', g1), ov('g2h', 'Team 2nd-half goals', sub(goals, g1)),
@@ -68,15 +98,18 @@ function sample(f) {
 
   const meta = `${f.comp} · ${f.venue} · ${fmtDate(f.date)}, ${f.ko}`;
   if (!f.full) {
-    const LEAGUE = { RMA: 'LaLiga', BAR: 'LaLiga', INT: 'Serie A', JUV: 'Serie A', ENG: 'NT', ESP: 'NT', ARS: 'PL', CHE: 'PL', FCB: 'BL', BVB: 'BL', PSG: 'L1', OM: 'L1', NAP: 'Serie A', BEN: 'Liga PT', ROM: 'Serie A', AJA: 'Erediv' };
-    const EURO = { CHE: 'UECL', OM: 'UEL', ROM: 'UEL', AJA: 'UEL' };
+    const LEAGUE = { RMA: 'LaLiga', BAR: 'LaLiga', INT: 'Serie A', JUV: 'Serie A', ENG: 'NT', ESP: 'NT', ARS: 'PL', CHE: 'PL', FCB: 'BL', BVB: 'BL', PSG: 'L1', OM: 'L1', NAP: 'Serie A', BEN: 'Liga PT', ROM: 'Serie A', AJA: 'Erediv',
+      EVE: 'PL', NEW: 'PL', AVL: 'PL', TOT: 'PL', BHA: 'PL', FUL: 'PL', MCI: 'PL', ATM: 'LaLiga', SEV: 'LaLiga', VIL: 'LaLiga', BET: 'LaLiga', MIL: 'Serie A', LAZ: 'Serie A', ATA: 'Serie A', FIO: 'Serie A',
+      RBL: 'BL', B04: 'BL', VFB: 'BL', SGE: 'BL', LYO: 'L1', MON: 'L1', LIL: 'L1', NIC: 'L1', POR: 'Liga PT', FRA: 'NT', ITA: 'NT', GER: 'NT', NED: 'NT' };
+    const EURO = { CHE: 'UECL', FIO: 'UECL', OM: 'UEL', ROM: 'UEL', AJA: 'UEL', TOT: 'UEL', POR: 'UEL', LYO: 'UEL', NIC: 'UEL', BET: 'UEL', LAZ: 'UEL', SGE: 'UEL' };
+    const UCL = 'RMA BAR INT JUV ARS FCB BVB PSG NAP BEN MCI ATM B04 MIL ATA AVL MON LIL NEW RBL VFB'.split(' ');
     const POOL = { PL: ['Everton', 'Brentford', 'Fulham', 'Wolves', 'Brighton', 'Villa', 'Newcastle', 'Spurs'], LaLiga: ['Sevilla', 'Valencia', 'Betis', 'Villarreal', 'Girona', 'Osasuna', 'Getafe', 'Celta'],
       'Serie A': ['Lazio', 'Atalanta', 'Torino', 'Bologna', 'Fiorentina', 'Genoa', 'Udinese', 'Como'], BL: ['Leipzig', 'Leverkusen', 'Stuttgart', 'Freiburg', 'Mainz', 'Wolfsburg', 'Union', 'Bremen'],
       L1: ['Lyon', 'Monaco', 'Lille', 'Nice', 'Rennes', 'Lens', 'Nantes', 'Brest'], 'Liga PT': ['Porto', 'Sporting', 'Braga', 'Guimarães', 'Rio Ave', 'Estoril', 'Arouca', 'Famalicão'],
       Erediv: ['PSV', 'Feyenoord', 'AZ', 'Twente', 'Utrecht', 'Heerenveen', 'Sparta', 'NEC'], NT: ['Italy', 'France', 'Germany', 'Portugal', 'Netherlands', 'Belgium', 'Croatia', 'Denmark'] };
     const side = (name, code, home) => {
       const lg = LEAGUE[code], pool = POOL[lg].filter(n => n !== name);
-      const comps = lg === 'NT' ? ['WCQ', 'WCQ', 'Friendly', 'NL', 'NL', 'Friendly', 'WCQ', 'NL', 'WCQ', 'NL'] : ten((_, i) => [2, 5, 8].includes(i) ? EURO[code] || 'UCL' : lg);
+      const comps = lg === 'NT' ? ['WCQ', 'WCQ', 'Friendly', 'NL', 'NL', 'Friendly', 'WCQ', 'NL', 'WCQ', 'NL'] : ten((_, i) => [2, 5, 8].includes(i) ? EURO[code] || (UCL.includes(code) ? 'UCL' : 'Cup') : lg);
       return team(name, code, home, [], ten((_, i) => pool[(i * 3 + code.length) % pool.length]), comps);
     };
     return { fixture: { name: `${f.home} v ${f.away}`, meta, refLine: 'Referee not appointed yet. This updates when they are.' }, teams: [side(f.home, f.hc, true), side(f.away, f.ac, false)], notes: [] };
