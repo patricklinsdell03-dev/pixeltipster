@@ -49,32 +49,38 @@ button:focus-visible{outline:3px solid var(--g);outline-offset:2px}
 .gm.x{opacity:.45;text-decoration:line-through}
 .pair,.notes{display:flex;flex-direction:column;gap:16px}
 .r{text-align:right}
-/* desktop: sidebar with fixture, strongest lines and games filter; wider rows with everything inline */
-#app.wide{display:grid;grid-template-columns:340px minmax(0,1fr);gap:32px;max-width:1240px;padding:0 24px 40px;align-items:start}
-.wide .side{position:sticky;top:0;max-height:100vh;overflow-y:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:14px;padding-bottom:24px}
-.wide .side .note{margin:0;padding:8px 0}
-.wide main{display:flex;flex-direction:column;gap:14px;min-width:0}
-.wide .top{margin:0;padding:12px 0}
-.wide .top .pills{margin:0;padding:0}
+/* desktop (1000px+): header across the top, sidebar for strongest lines and games filter, main area uses the full width */
+#app.wide{display:grid;grid-template-columns:320px minmax(0,1fr);grid-template-areas:"h h" "s m";column-gap:28px;row-gap:20px;max-width:none;padding:0 28px 40px;align-items:start}
+.wide .dhead{grid-area:h;position:sticky;top:0;z-index:5;background:var(--bg);margin:0 -28px;padding:12px 28px;border-bottom:2px solid var(--ln);display:flex;align-items:center;gap:28px}
+.wide .dhead h1{font-size:24px}
+.wide .dhead .pills{margin:0 0 0 auto;padding:0}
+.wide .side{grid-area:s;position:sticky;top:86px;max-height:calc(100vh - 86px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--ln) transparent;display:flex;flex-direction:column;gap:14px;padding:0 4px 24px 0}
+.wide .side .note{margin:0;padding:8px 10px}
+.wide main{grid-area:m;display:flex;flex-direction:column;gap:20px;min-width:0}
 .wide .gm{min-height:34px;font-size:13px;padding:0 10px}
-.wrow{display:grid;grid-template-columns:180px minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,700px),1fr));gap:20px;align-items:start}
+.mcard{container-type:inline-size}
+.wrow{display:grid;grid-template-columns:170px minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center}
 .wrow .cell{gap:6px}
-.wt{display:grid;grid-template-columns:118px repeat(3,minmax(0,1fr));gap:8px;align-items:center}
-.wide .step button{width:32px;min-height:36px}.wide .step span{min-width:46px}
-.wide .side{scrollbar-color:var(--ln) transparent}
+.wt{display:grid;grid-template-columns:104px repeat(3,minmax(0,1fr));gap:8px;align-items:center}
+.wide .step button{width:28px;min-height:32px}.wide .step span{min-width:40px}
 .whd{padding:10px 0;border-bottom:2px solid var(--s2)}
-.wide .det{padding-left:204px}
+.wide .det{padding-left:194px}
 .wide .pair{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.rh.prow,.prow{display:grid;grid-template-columns:minmax(0,1fr) 150px 50px 56px 140px 44px;gap:16px;align-items:center}
+@container (max-width:640px){.wrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.wrow>.rh{grid-column:1/-1;padding-bottom:0}.whd>span:first-child{display:none}.wide .det{padding-left:20px}}
+.rh.prow,.prow{display:grid;grid-template-columns:minmax(0,1fr) 110px 44px 50px 110px 40px;gap:12px;align-items:center}
 .wide .rh.prow{padding:12px 0}
 .hits{display:flex;flex-direction:column;gap:4px}
-.wide .notes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media (max-width:1279px){
-  #app.wide{grid-template-columns:300px minmax(0,1fr);gap:24px}
-  .wrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.wrow>.rh{grid-column:1/-1;padding-bottom:0}.whd>span:first-child{display:none}
-  .wide .det{padding-left:20px}
-  .rh.prow,.prow{grid-template-columns:minmax(0,1fr) 100px 40px 48px 100px 36px;gap:12px}
-}
+/* desktop players: every player against every stat */
+.mxwrap{overflow-x:auto}
+.mx{display:grid;grid-template-columns:minmax(170px,1.5fr) 80px 46px repeat(var(--n),minmax(104px,1fr));gap:10px;align-items:center}
+.mx.hd{padding:10px 0;border-bottom:2px solid var(--s2);align-items:end}
+.mx.hd .sorter{min-height:32px;padding:0 6px;background:none;border-color:transparent}
+.mx.hd .sorter.on{background:var(--y);color:var(--bg)}
+.rh.mx{display:grid;padding:8px 0}
+.hc{padding:6px 8px;text-align:center}
+.hc.hot{background:var(--g)}.hc.hot b{color:var(--bg)}
+.wide .notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -101,7 +107,7 @@ button:focus-visible{outline:3px solid var(--g);outline-offset:2px}
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
 const DATA = sample(), T = DATA.teams;
 const S = { tab: 'Goals', pstat: 'sot', lines: {}, open: {}, more: {}, off: {}, comp: {}, filt: false };
-const W = matchMedia('(min-width:1000px)');   // desktop layout
+const W = matchMedia('(min-width:1000px)'), WM = matchMedia('(min-width:1500px)');   // desktop layout; WM = room for the player matrix
 const REG = {};   // line id -> { st, ti }, filled on render so the +/- handler can find the stat
 const TABS = ['Goals', 'Result', 'Shots', 'Corners', 'Cards', 'Players', 'Trends'];
 const LEGEND = `<div class="sm mu">Last 10 games, oldest first. Green landed, faded is left out.</div>`;
@@ -167,13 +173,33 @@ function teamRow(gi, si) {
 function marketTab(name) {
   const gi = T[0].groups.findIndex(g => g.name === name), stats = T[0].groups[gi].stats, more = !!S.more[name];
   const hidden = stats.filter(s => !s.core).length;
-  return `<div class="card" style="padding-top:4px">${W.matches ? `<div class="wrow whd px mu"><span>Stat</span>${T.map(t => `<span class="wt"><span>${t.name}</span><span class="r">Avg</span><span class="r">L5</span><span class="r">Hits</span></span>`).join('')}</div>` : ''}${stats.map((st, si) => more || st.core ? teamRow(gi, si) : '').join('')}`
+  return `<div class="card mcard" style="padding-top:4px">${W.matches ? `<h2 style="padding-top:10px">${name}</h2>` +`<div class="wrow whd px mu"><span>Stat</span>${T.map(t => `<span class="wt"><span>${t.name}</span><span class="r">Avg</span><span class="r">L5</span><span class="r">Hits</span></span>`).join('')}</div>` : ''}${stats.map((st, si) => more || st.core ? teamRow(gi, si) : '').join('')}`
     + (hidden ? `<button data-a="more" data-id="${name}" style="margin-top:8px;font-weight:600;font-size:14px">${more ? 'Show fewer' : `Show ${hidden} more`}</button>` : '') + `</div>`
-    + (name === 'Cards' ? `<div class="card"><h2>Referee</h2><div>${DATA.fixture.refLine}</div></div>` : '');
+    + (name === 'Cards' && !W.matches ? `<div class="card"><h2>Referee</h2><div>${DATA.fixture.refLine}</div></div>` : '');
 }
 
 /* Players: pick a stat, every player ranked at one shared line. */
+/* Desktop players: every player against every stat, one line per stat, click a heading to sort. */
+function playersMatrix() {
+  const all = T.flatMap((t, ti) => t.players.map((p, pi) => ({ p, ti, pi }))), keys = T[0].players[0].stats.filter(s => S.more.players || s.core), lines = {};
+  const of = (r, k) => r.p.stats.find(x => x.key === k), share = c => c.N ? c.n / c.N : 0;
+  keys.forEach(s => { const id = 'p.' + s.key; lines[s.key] = isCount(s) ? (S.lines[id] ?? 1) : null; REG[id] = { st: { mode: s.mode, vals: all.flatMap(r => of(r, s.key).vals) }, ti: null }; });
+  all.forEach(r => r.c = Object.fromEntries(keys.map(s => [s.key, rate(of(r, s.key), r.ti, lines[s.key])])));
+  const sk = keys.some(s => s.key === S.pstat) ? S.pstat : keys[0].key, cols = `style="--n:${keys.length}"`;
+  all.sort((a, b) => share(b.c[sk]) - share(a.c[sk]));
+  return `<div class="card"><div class="kv" style="align-items:center;padding-bottom:6px"><span class="sm mu">Click a stat heading to sort by it. Use - and + to set that stat's line for every player. Click a player for game-by-game numbers.</span>`
+    + `<button data-a="more" data-id="players" style="flex:none;font-size:14px;font-weight:600">${S.more.players ? 'Main stats only' : 'All stats'}</button></div><div class="mxwrap">`
+    + `<div class="mx hd" ${cols}><span class="px mu">Player</span><span class="px mu">Team</span><span class="px mu r">Mins</span>${keys.map(s => `<span style="display:flex;flex-direction:column;gap:4px;align-items:center"><button class="sorter sm ${s.key === sk ? 'on' : ''}" data-a="pstat" data-id="${s.key}" aria-pressed="${s.key === sk}">${s.label}</button>${isCount(s) ? stepper('p.' + s.key, s, lines[s.key]) : '<span class="sm mu">Yes</span>'}</span>`).join('')}</div>`
+    + all.map(r => {
+      const rid = `x${r.ti}.${r.pi}`, open = !!S.open[rid], st = of(r, sk);
+      return `<div class="row"><button class="rh mx" ${cols} data-a="open" data-id="${rid}" aria-expanded="${open}"><span class="lab">${chev(open)}${r.p.name}</span><span class="sm mu">${T[r.ti].code} · ${r.p.pos}</span><span class="mono r mu">${r.p.mins}</span>`
+        + keys.map(s => { const c = r.c[s.key]; return `<span class="hc mono ${c.hot ? 'hot' : ''}" style="${c.hot ? '' : `background:rgba(99,230,173,${(c.pct / 330).toFixed(2)})`}"><b>${c.n}/${c.N}</b></span>`; }).join('') + `</button>`
+        + (open ? `<div class="det fade" style="padding-left:20px">${LEGEND}<b>${st.label}, ${lineShort(st, lines[sk])}</b>${detail(rid, st, r.ti, null, lines[sk])}</div>` : '') + `</div>`;
+    }).join('') + `</div></div>`;
+}
+
 function playersTab() {
+  if (WM.matches) return playersMatrix();
   const key = S.pstat, id = 'p.' + key, rows = [];
   T.forEach((t, ti) => t.players.forEach((p, pi) => rows.push({ p, ti, pi, st: p.stats.find(s => s.key === key) })));
   const st0 = rows[0].st, count = isCount(st0), line = count ? (S.lines[id] ?? 1) : null;
@@ -224,19 +250,21 @@ function render() {
   const f = DATA.fixture, top = strongest(), app = document.getElementById('app');
   const sx = {}; app.querySelectorAll('.pills[data-k]').forEach(p => sx[p.dataset.k] = p.scrollLeft);
   const fo = { ...(document.activeElement?.dataset || {}) };
-  const head = `<div class="note">Prototype. Every number on this page is a sample, not real data.</div>
-     <div class="px" style="font-size:22px;letter-spacing:.04em;font-weight:700">PIXEL<span style="color:var(--y)">TIPSTER</span></div>
-     <div><div class="px mu">${f.meta}</div><h1>${f.name}</h1></div>
-     <div class="card" style="border-color:var(--g)"><h2 style="padding-bottom:4px">Strongest lines</h2>
+  const wide = W.matches, tab = wide && TABS.slice(0, 5).includes(S.tab) ? 'Teams' : !wide && S.tab === 'Teams' ? 'Goals' : S.tab;
+  const note = `<div class="note">Prototype. Every number on this page is a sample, not real data.</div>`;
+  const brand = `<div class="px" style="font-size:22px;letter-spacing:.04em;font-weight:700">PIXEL<span style="color:var(--y)">TIPSTER</span></div>
+     <div><div class="px mu">${f.meta}</div><h1>${f.name}</h1></div>`;
+  const head = `<div class="card" style="border-color:var(--g)"><h2 style="padding-bottom:4px">Strongest lines</h2>
        ${top.length ? top.map(x => `<div class="kv" style="padding:8px 0;border-top:2px solid var(--s2);font-size:15px"><span>${x.text}</span><span class="mono g" style="flex:none">${x.n}/${x.N}</span></div>`).join('') : `<div class="mu sm">No line landed in 80% of the selected games.</div>`}
        <div class="sm mu" style="padding-top:6px">Landed in at least 80% of the selected games and 4 of the last 5.</div></div>`;
-  const tabs = `<div class="pills" data-k="tabs">${TABS.map(t => `<button data-a="tab" data-id="${t}" class="${S.tab === t ? 'on' : ''}">${t}</button>`).join('')}</div>`;
-  const body = (S.tab === 'Trends' ? notesTab() : S.tab === 'Players' ? playersTab() : marketTab(S.tab))
+  const tabs = `<div class="pills" data-k="tabs">${(wide ? ['Teams', 'Players', 'Trends'] : TABS).map(t => `<button data-a="tab" data-id="${t}" class="${tab === t ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+  const body = (tab === 'Trends' ? notesTab() : tab === 'Players' ? playersTab() : tab === 'Teams' ? `<div class="mgrid">${T[0].groups.map(g => marketTab(g.name)).join('')}</div>` : marketTab(tab))
     + `<div class="sm mu">${W.matches ? 'Click' : 'Tap'} any stat for the game-by-game numbers${W.matches ? '' : ' and to move the line'}. Hit rates describe past games. They are not predictions or a promise of profit. 18+.</div>`;
   app.className = W.matches ? 'wide' : '';
   app.innerHTML = W.matches
-    ? `<aside class="side">${head}<h2>Games used <span class="mono">${sel(0).length + sel(1).length}/20</span></h2>${gamesPanel()}</aside><main><div class="top">${tabs}</div>${body}</main>`
-    : `${head}<div class="top">${tabs}${S.tab === 'Trends' ? '' : gamesBtn()}</div>${S.tab !== 'Trends' && S.filt ? gamesPanel() : ''}${body}`;
+    ? `<header class="dhead">${brand}${tabs}</header><aside class="side">${note}${head}<div class="card"><h2>Referee</h2><div>${f.refLine}</div></div>`
+      + `<h2>Games used <span class="mono">${sel(0).length + sel(1).length}/20</span></h2>${gamesPanel()}</aside><main>${body}</main>`
+    : `${note}${brand}${head}<div class="top">${tabs}${tab === 'Trends' ? '' : gamesBtn()}</div>${tab !== 'Trends' && S.filt ? gamesPanel() : ''}${body}`;
   app.querySelectorAll('.pills[data-k]').forEach(p => p.scrollLeft = sx[p.dataset.k] || 0);
   if (fo.a) app.querySelector(`[data-a="${fo.a}"][data-id="${fo.id}"]${fo.d ? `[data-d="${fo.d}"]` : ''}`)?.focus({ preventScroll: true });
 }
@@ -259,7 +287,7 @@ document.getElementById('app').addEventListener('click', e => {
   }
   render();
 });
-W.addEventListener('change', render);
+W.addEventListener('change', render); WM.addEventListener('change', render);
 render();
 
 /* ---------- SAMPLE DATA (replace with the real feed) ---------- */
