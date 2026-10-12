@@ -334,6 +334,7 @@ function appAction(a, id, d) {
   else if (a === 'btset') { const [path, val] = id.split('|'); btSet(path, val); }
   else if (a === 'btflag') A.bt.rc.flags[id] = !A.bt.rc.flags[id];
   else if (a === 'btrun') btRun();
+  else if (a === 'bttry') { const [d, v] = id.split('|'); btApply(d, v); btRun(); }
   else if (a === 'btsave') {
     const B = A.bt, fb = B.sport === 'football', rules = JSON.parse(JSON.stringify(fb ? B.fb : B.rc));
     A.systems = [...A.systems, { name: `${fb ? rules.market : rules.code === 'All' ? 'Racing ' + rules.market.toLowerCase() : rules.code + ' ' + rules.market.toLowerCase()} system ${A.systems.length + 1}`, sport: B.sport, rules }];

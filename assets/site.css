@@ -159,6 +159,12 @@ input,select{font:inherit;color:var(--tx);background:var(--s1);border:1px solid 
 .btf{display:flex;flex-direction:column;gap:6px}.btf .pills{flex-wrap:wrap}.btf .pills button{min-height:34px;font-size:13px}
 .curve{width:100%;height:auto;display:block;margin-top:8px}
 p.warn{color:var(--warn)}
+.amber{color:var(--warn)}
+.badge.g{background:rgba(var(--g-rgb),.14);color:var(--g)}.badge.amber{background:var(--warns);color:var(--warn)}.badge.mu{color:var(--mu)}
+.closecard .big{font-size:34px;line-height:1.1}
+.closebar{position:relative;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--s2),var(--warns) 50%,rgba(var(--g-rgb),.25) 70%)}
+.closebar span{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--tx)}
+.closebar i{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--y);border:3px solid var(--s1);box-shadow:0 1px 4px var(--k);transition:left .4s ease}
 @media (max-width:999px){.btgrid{grid-template-columns:minmax(0,1fr)}}
 .warnbox{border-color:var(--bad);color:var(--bad);font-weight:500}
 @media (max-width:699px){.fxrow{grid-template-columns:44px minmax(0,1fr) 18px}.fxb{grid-column:2;justify-content:flex-start}.fxrow>.pi{grid-row:1;grid-column:3}}
